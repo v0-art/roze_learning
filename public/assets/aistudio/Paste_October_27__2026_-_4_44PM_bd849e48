@@ -1,0 +1,2225 @@
+# MASTER PROMPT / TECHNICAL SPECIFICATION
+# NEXUS ACADEMY — INTERACTIVE CYBERSECURITY LEARNING PLATFORM
+
+## 0. YOUR ROLE AND EXPECTED RESULT
+
+You are a team of senior specialists:
+
+- Senior Full-Stack Software Architect
+- Senior React / TypeScript Developer
+- Backend and Database Engineer
+- UI/UX Product Designer
+- Data Visualization Engineer
+- Information Security Engineer
+- QA Automation Engineer
+- Learning Management System Architect
+
+Your task is to **design and implement a working full-stack web application**, not merely a landing page, static prototype, UI concept or visual demonstration.
+
+The entire interface must be in Russian.
+
+The application is called **NEXUS Academy** (working name, editable from administrator settings).
+
+Build a visually exceptional, intuitive and responsive educational platform for a long-term cybersecurity and telecommunications training program.
+
+The platform must support both students and administrators, permanent storage of progress, an interactive knowledge graph, learning analytics, lesson prompt management, structured result imports, homework tracking, exams and administrative reporting.
+
+Implement working functionality, persistent data storage, real authorization and navigation.
+
+Do not create decorative buttons that have no functionality.
+
+Do not simulate database persistence with hardcoded React state.
+
+Do not implement Gemini API calls or any other AI inference inside the application.
+
+If a feature cannot be completed immediately, display a clearly identifiable implementation state rather than pretending it works.
+
+---
+
+# 1. PRODUCT VISION
+
+## 1.1. General concept
+
+This is not a traditional educational website.
+
+NEXUS Academy is a personalized educational trajectory management platform where:
+
+1. The student enters the website.
+2. Sees their current progress, unlocked lessons and knowledge map.
+3. Chooses an available lesson.
+4. Copies a prepared lesson prompt.
+5. Opens ChatGPT in a separate tab and studies with the external AI instructor.
+6. Completes the lesson, tests and receives homework.
+7. Copies a structured lesson report produced by ChatGPT.
+8. Returns to NEXUS Academy.
+9. Imports the report.
+10. The platform validates, stores and visualizes the submitted results.
+11. The platform prepares the next lesson prompt by automatically inserting the previous lesson's carryover instructions.
+12. The administrator monitors the learner's progress, results, difficulties and examination performance.
+
+The website **does not teach using its own AI model**.
+
+ChatGPT remains an external service. The website functions as the central management, tracking, navigation and motivation layer.
+
+## 1.2. Core product values
+
+- Clear learning progression.
+- Deep connections between subjects.
+- Transparent achievements and gaps.
+- Individual educational trajectory.
+- Strong motivational visual feedback.
+- Convenient external ChatGPT workflow.
+- Detailed administrator supervision.
+- Reliable long-term data storage.
+- Accessible, modern and enjoyable interface.
+
+## 1.3. Main non-goal
+
+Do not attempt to embed, automate or imitate a ChatGPT session.
+
+The student manually transfers the lesson prompt to ChatGPT and manually imports the completed lesson report back into the platform.
+
+Do not claim that the platform can verify what actually happened in ChatGPT. Submitted reports are self-reported evidence until reviewed or confirmed by an administrator.
+
+---
+
+# 2. REQUIRED TECHNOLOGY STACK
+
+Use the following preferred technologies:
+
+**Frontend**
+- React
+- TypeScript
+- Vite or the supported React build system
+- Tailwind CSS
+- shadcn/ui or equivalent accessible reusable components
+- Lucide icons
+- React Router
+- TanStack Query where appropriate
+
+**Interactive knowledge graph**
+- React Flow / @xyflow/react
+- ELK.js or another reliable graph layout engine
+- Custom node and edge components
+- SVG paths and CSS animations for flight-route-style connections
+
+**Charts**
+- Recharts or equivalent reliable React charting library
+
+**Authentication and persistent storage**
+- Firebase Authentication
+- Cloud Firestore
+- Firebase Security Rules
+- Firebase Admin SDK in the trusted backend where required
+
+**Backend**
+- Node.js with TypeScript
+- Server-side validation
+- Secured administrative operations
+
+**Validation**
+- Zod or equivalent schema validation
+
+Prefer the native Google AI Studio Firebase integration if available.
+
+Use real Firebase Authentication and Firestore rather than a simulated local database.
+
+A separate external database is not necessary unless a demonstrable technical limitation requires it.
+
+Never expose privileged credentials or administrator secrets in frontend code.
+
+Use a modular architecture so the project can later be exported and maintained outside Google AI Studio.
+
+---
+
+# 3. DESIGN SYSTEM AND VISUAL DIRECTION
+
+## 3.1. Overall design
+
+Create a premium interface combining the visual principles of:
+
+- Modern technical dashboards.
+- Interactive aviation route maps.
+- Scientific knowledge graphs.
+- High-end SaaS administration systems.
+- Minimalist cybersecurity products.
+
+The application must feel like a polished commercial product, not a typical AI-generated dashboard template.
+
+The defining visual component is a large interactive knowledge map representing the student's entire educational path.
+
+## 3.2. Color palette
+
+Default to a refined dark theme.
+
+Suggested palette:
+
+- Main background: deep navy / near-black (#090F1C).
+- Secondary background: slate navy (#111B2E).
+- Card background: #172238.
+- Primary accent: electric cyan (#36D7F5).
+- Secondary accent: violet (#9478FF).
+- Success: emerald (#39D7A2).
+- Warning: amber (#F2B85B).
+- Error: muted coral (#ED7281).
+- Primary text: #F1F5FA.
+- Secondary text: #94A6BF.
+
+Do not use excessively saturated backgrounds.
+
+Use accent colors selectively to communicate statuses, active elements and progress.
+
+Support a polished light theme as a secondary mode.
+
+## 3.3. Typography
+
+Use a clean modern font such as Inter or Manrope with Cyrillic support.
+
+Typography hierarchy:
+
+- Clear page titles.
+- Compact dashboard headings.
+- Highly legible body text.
+- Small but readable metadata.
+- Monospaced identifiers for technical codes, scores and lesson IDs.
+
+Avoid overly large headings and excessive empty space.
+
+## 3.4. Tactile buttons
+
+Buttons must feel physically responsive.
+
+Required behavior:
+
+- Subtle hover elevation.
+- Soft glow on primary actions.
+- 120–180 ms press feedback.
+- Small scale reduction when pressed, around 0.97–0.98.
+- Clear disabled state.
+- Visible keyboard focus.
+- Loading feedback for asynchronous actions.
+- Success or error confirmation after execution.
+
+Use restrained animations, not excessive motion.
+
+## 3.5. Cards
+
+Cards should have:
+
+- Rounded corners.
+- Subtle borders.
+- Layered depth.
+- Controlled shadows.
+- Smooth hover transitions.
+- Clearly separated primary and secondary actions.
+
+Card clicks must navigate to meaningful destinations.
+
+## 3.6. Motion
+
+Use subtle transitions for:
+
+- Page navigation.
+- Progress changes.
+- Achievement unlocking.
+- Graph connections.
+- Opening side panels.
+- Course completion events.
+
+Provide reduced-motion support.
+
+Animations must not interfere with usability or performance.
+
+## 3.7. Responsive layout
+
+Design mobile-first responsive behavior with excellent desktop usability.
+
+Desktop:
+- Collapsible sidebar.
+- Dashboard cards.
+- Large knowledge graph.
+- Multi-column administrator interface.
+
+Tablet:
+- Adaptive card grid.
+- Simplified navigation.
+- Touch-friendly graph controls.
+
+Mobile:
+- Bottom navigation or compact navigation drawer.
+- Large touch targets.
+- Vertical learning timeline.
+- Simplified knowledge graph view or accessible topic list.
+
+Do not force users to interact with tiny graph elements on mobile.
+
+---
+
+# 4. USER ROLES AND AUTHORIZATION
+
+Implement two primary roles.
+
+## 4.1. Student
+
+Can:
+
+- Access their own dashboard.
+- View published course content.
+- View their accessible lessons.
+- Copy lesson prompts.
+- Submit results.
+- View their own educational history.
+- See homework.
+- View the knowledge graph.
+- View their exam preparation bank.
+- Track personal progress.
+- Send messages to an administrator.
+- Review administrator feedback.
+
+Cannot:
+
+- Modify published prompts.
+- Modify their official grades.
+- Mark exam attempts as administrator-confirmed.
+- Change lesson unlock policies.
+- Edit another student's data.
+- Grant themselves administrative permissions.
+- Modify official question banks.
+
+## 4.2. Administrator / Main Mentor
+
+Can:
+
+- Create and manage courses and disciplines.
+- Publish lessons and prompts.
+- Edit the knowledge graph.
+- Manage students and invitations.
+- Unlock or restrict lessons.
+- Read submitted reports.
+- Review and confirm results.
+- Correct grades with an audit trail.
+- Monitor gaps and achievements.
+- Assign corrective study.
+- Manage homework and exams.
+- Read all control-work and examination reports.
+- Review retakes.
+- Communicate with students.
+- Export analytics and results.
+- Adjust progression policies.
+
+## 4.3. Authentication requirements
+
+Implement real user authentication with Google Sign-In through Firebase Authentication.
+
+For the initial release, restrict access to administrator-invited users.
+
+Administrator privileges must only be assigned through trusted backend configuration or trusted server-side administrative operations.
+
+A student must never be able to become an administrator by changing frontend state or writing a role field.
+
+Support sign out, persistent sessions, access-denied states and authentication errors.
+
+Enforce data isolation at the database and/or trusted backend level.
+
+---
+
+# 5. EDUCATIONAL STRUCTURE
+
+The curriculum has four hierarchical levels:
+
+**Course → Discipline/Module → Topic → Lesson**
+
+Use the following code system:
+
+- M01 — Module 01.
+- M01-T01 — Topic 01 within Module 01.
+- M01-T01-U01 — Lesson 01 within Topic 01.
+
+Use these identifiers consistently throughout the database, interface, prompt generator, knowledge graph and reports.
+
+An additional topic-level control work can be represented as M01-T01-KR01.
+
+Discipline exams use identifiers such as M01-EX01.
+
+Do not confuse the Cyrillic letter З with the number 3. For lessons use U.
+
+## 5.1. Initial curriculum
+
+Create the course skeleton with 18 disciplines:
+
+1. Information, mathematics and fundamentals of computing.
+2. Electrical engineering, electronics and digital circuitry.
+3. Telecommunications theory, signals, digital processing and measurements.
+4. Circuit-switched networks: voice channels, PCM, E1 and PDH.
+5. Transport networks: SDH, optical transmission, OTN and DWDM.
+6. Packet-switched networks: OSI and TCP/IP.
+7. Network protocols and routing.
+8. Radio engineering, wireless and mobile networks.
+9. Computer architecture and operating systems.
+10. Algorithms, programming and automation.
+11. Cryptography and symmetric algorithms.
+12. Hash functions, asymmetric cryptography, finite fields and digital signatures.
+13. Threat models, organizational and legal information security.
+14. Cryptographic protection of communication channels and network traffic.
+15. Hardware and software protection of computing systems.
+16. Information leakage through technical channels.
+17. Network infrastructure security, monitoring and vulnerability analysis.
+18. Modeling, designing and testing secure telecommunications systems.
+
+All displayed module names must use Russian translations consistent with this specification.
+
+Initially, create these as course structure records.
+
+Do not invent a complete set of lessons or pretend unapproved lessons are ready.
+
+Support separate statuses:
+
+- Draft.
+- Under review.
+- Published.
+- Archived.
+
+Only published lessons can be opened by students.
+
+## 5.2. First module structure
+
+Create eight topics for Module 01:
+
+- M01-T01 — Информация, данные, сообщение и сигнал.
+- M01-T02 — Единицы информации и информационные объёмы.
+- M01-T03 — Системы счисления и двоичная арифметика.
+- M01-T04 — Представление чисел, текста и файлов в компьютере.
+- M01-T05 — Математическая логика и операции над битами.
+- M01-T06 — Математические основы инженерных расчётов.
+- M01-T07 — Комбинаторика, теория вероятностей и неопределённость.
+- M01-T08 — Алгоритмы, модели и первоначальное устройство компьютера.
+
+The topic structure is approved, but lesson content is added separately.
+
+Create a configurable lesson record for M01-T01-U01. Its prompt must be editable and published by an administrator. Do not fabricate the full official educational text if it is not provided.
+
+---
+
+# 6. STUDENT DASHBOARD
+
+Route: `/dashboard`
+
+The dashboard is the student's main home screen.
+
+It must instantly communicate:
+
+- Where the student currently is.
+- How much has been completed.
+- What to study next.
+- Which skills are strong.
+- Which skills need reinforcement.
+- Whether administrator feedback is waiting.
+
+## 6.1. Header
+
+Display:
+
+- Personalized greeting.
+- Current module and topic.
+- Current lesson.
+- Last learning activity.
+- Notifications.
+- Profile menu.
+
+## 6.2. Main hero card
+
+Prominent card:
+
+**«Продолжить обучение»**
+
+Display:
+- Lesson ID.
+- Lesson name.
+- Module name.
+- Current lesson status.
+- Estimated duration, if available.
+- Primary action: «Открыть урок».
+
+If a previous report still needs to be submitted, show:
+
+**«Завершите предыдущий урок — загрузите результат»**
+
+Do not show the next lesson as completed before its conditions are met.
+
+## 6.3. Progress metrics
+
+Display four main metric cards:
+
+- Completed lessons / published lessons.
+- Completed disciplines / 18.
+- Confirmed skill mastery.
+- Open learning gaps.
+
+Additional analytics:
+
+- Current learning streak.
+- Actual learning time, only if reliably tracked.
+- Average confirmed assessment result.
+- Homework completion rate.
+- Control work results.
+- Exam results.
+- Retake count.
+- Progress over recent weeks.
+
+Do not invent learning hours or grades.
+
+## 6.4. Activity chart
+
+Show a real chart of learning activity.
+
+Allow filtering by:
+
+- Last 7 days.
+- Last 30 days.
+- Last 90 days.
+- Entire history.
+
+Only actual recorded events contribute to metrics.
+
+## 6.5. Strong and weak knowledge areas
+
+Two dedicated dashboard panels:
+
+**«Хорошо освоено»**
+- Topics with successfully verified knowledge.
+- Related skills.
+- Confirmation dates.
+
+**«Требует внимания»**
+- Repeated errors.
+- Missing homework.
+- Unconfirmed knowledge.
+- Topics requiring review.
+
+Clicking an item opens its topic or skill details.
+
+## 6.6. Motivational interface
+
+Display meaningful progress:
+
+- Number of completed topics.
+- Newly unlocked knowledge branches.
+- Learning consistency.
+- Successfully resolved knowledge gaps.
+- Upcoming goals.
+
+Gamification must not reward repeatedly submitting reports or artificially inflated self-assessed scores.
+
+---
+
+# 7. COURSE NAVIGATION
+
+Route: `/course`
+
+Build a clear hierarchical course browser.
+
+## 7.1. Module cards
+
+Each module card displays:
+
+- Code.
+- Name.
+- Short introduction.
+- Number of topics.
+- Number of published lessons.
+- Progress percentage.
+- Status.
+- Prerequisite indicators.
+- Action to open.
+
+## 7.2. Module page
+
+Route: `/course/:moduleId`
+
+Display:
+
+- Why this discipline matters.
+- What will be studied.
+- What the student should know beforehand.
+- Future disciplines using these skills.
+- All topics.
+- Control works.
+- Final examination.
+- Learning outcomes.
+
+## 7.3. Topic page
+
+Route: `/course/:moduleId/:topicId`
+
+Display:
+
+- Topic introduction.
+- Learning objectives.
+- List of lessons.
+- Interdisciplinary dependencies.
+- Skills taught.
+- Homework and tests.
+- Topic-level control work.
+- Progress and gaps.
+
+## 7.4. Lesson availability
+
+States:
+
+- Не опубликован.
+- Заблокирован.
+- Доступен.
+- В процессе.
+- Ожидает загрузки результата.
+- Отправлен на проверку.
+- Завершён.
+- Требует повторения.
+
+A lock icon should explain why a lesson is unavailable.
+
+Never display a clickable lesson as available when access is prohibited.
+
+---
+
+# 8. LESSON PAGE AND CHATGPT WORKFLOW
+
+Route: `/lesson/:lessonId`
+
+This is a critical product screen.
+
+## 8.1. Lesson layout
+
+Display:
+
+- Lesson code.
+- Lesson title.
+- Module and topic.
+- Estimated duration.
+- Prerequisite knowledge.
+- Objectives.
+- Related skills.
+- Lesson status.
+- Prompt panel.
+- Result upload panel.
+- History of attempts.
+- Administrator comments.
+
+## 8.2. Step-by-step workflow
+
+Create a visible three-step process:
+
+**Step 1 — Получите промпт**
+
+Display the fully generated prompt and provide a large «Скопировать промпт» button.
+
+**Step 2 — Пройдите занятие в ChatGPT**
+
+Provide «Открыть ChatGPT» that opens `https://chatgpt.com/` in a separate tab.
+
+Do not claim an official automated lesson session has been created.
+
+**Step 3 — Загрузите результаты**
+
+Display a structured report import interface.
+
+The student can paste the final report copied from ChatGPT.
+
+## 8.3. Prompt display
+
+Offer:
+
+- Read-only prompt preview.
+- Copy button.
+- Copy success feedback.
+- Character count.
+- Version of the lesson prompt.
+- Information about attached previous lesson results.
+- Button to view the inserted carryover block.
+- Optional download as TXT or Markdown.
+
+Students cannot modify official lesson prompts in the database.
+
+## 8.4. Prompt assembly
+
+The final copied prompt must be created programmatically from:
+
+1. General course rules.
+2. Module-specific instructions.
+3. Lesson-specific prompt.
+4. Structured carryover block from the previous lesson.
+5. Current outstanding knowledge gaps.
+6. Structured report export instructions for the current lesson.
+
+A configurable assembly order must be maintained by the system.
+
+Do not call an AI model to generate or rewrite these blocks.
+
+Store the exact final prompt used by the student as a versioned snapshot associated with the lesson attempt.
+
+## 8.5. First lesson exception
+
+For M01-T01-U01, no previous lesson report exists.
+
+The first lesson must not require a carryover block.
+
+## 8.6. Future lessons
+
+For M01-T01-U02 and every later lesson, automatically incorporate the saved carryover instructions from the previous completed lesson.
+
+This block must include, when available:
+
+- Previous lesson identifier.
+- Relevant previous lesson knowledge.
+- All errors requiring mandatory rechecking.
+- Outstanding homework.
+- Additional previous-topic questions.
+- Older persistent knowledge gaps.
+- Mentor-specific corrective instructions.
+
+If mandatory data is missing, display a clear warning rather than silently inventing or omitting it.
+
+---
+
+# 9. STRUCTURED LESSON REPORT IMPORT
+
+This is one of the most important mechanisms in the system.
+
+The platform has no AI parser.
+
+Therefore, it must support a reliable structured report protocol.
+
+## 9.1. Report output requirement
+
+At the end of a lesson, the external ChatGPT instructor should produce:
+
+1. A human-readable lesson summary.
+2. A structured machine-readable report.
+3. The carryover instructions for the next lesson.
+
+The web application stores both the human-readable report and the structured values.
+
+## 9.2. Supported import types
+
+Implement:
+
+- Paste structured JSON.
+- Paste JSON wrapped in a Markdown code fence.
+- Upload `.json` file.
+- Upload `.txt` or `.md` containing the structured report block.
+- Manual report entry when a valid structured export is unavailable.
+
+For manual entry, clearly label the information as entered by the student.
+
+## 9.3. Structured report schema
+
+Use a versioned contract based on the following example:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "lessonId": "M01-T01-U01",
+  "lessonStatus": "completed",
+  "coveredTopics": [
+    "Информация",
+    "Данные",
+    "Сообщение"
+  ],
+  "assessment": {
+    "maxScore": 100,
+    "earnedScore": 80,
+    "questions": [
+      {
+        "questionId": "Q01",
+        "skillIds": ["skill-information-basics"],
+        "result": "incorrect",
+        "feedback": "Обучающийся смешал данные и информацию",
+        "needsRecheck": true
+      }
+    ]
+  },
+  "homework": [
+    {
+      "id": "HW01",
+      "title": "Разбор SMS",
+      "description": "Определить информацию, данные и сообщение"
+    }
+  ],
+  "knowledgeGaps": [
+    {
+      "skillId": "skill-information-basics",
+      "description": "Различие данных и информации",
+      "status": "needs-review",
+      "mandatoryNextCheck": true
+    }
+  ],
+  "strongSkills": [
+    {
+      "skillId": "skill-message-source",
+      "description": "Определение источника сообщения"
+    }
+  ],
+  "nextLessonInstructions": {
+    "mandatoryRechecks": [
+      "Проверить различие информации и данных"
+    ],
+    "homeworkChecks": [
+      "Проверить домашнее задание HW01"
+    ],
+    "additionalChecks": [
+      "Проверить понятие сообщения"
+    ]
+  },
+  "studentNotes": ""
+}
+```
+
+This is an example of format only, not an actual student result.
+
+All values must be validated before storage.
+
+## 9.4. Critical validation
+
+The validator must check:
+
+- Valid JSON syntax.
+- Supported schema version.
+- Existing lesson ID.
+- Matching lesson being submitted.
+- Valid score ranges.
+- Non-negative values.
+- Valid question and skill IDs where a published registry exists.
+- Allowed statuses.
+- Valid array structures.
+- No duplicate report submission accidentally creating duplicate progress.
+- Limits on text size.
+- Mandatory rechecks correctly represented.
+
+Never interpret arbitrary pasted text as a command to the website.
+
+Do not execute HTML, JavaScript, Markdown scripts or instructions embedded in imported reports.
+
+## 9.5. Preview before submission
+
+After import, show an editable confirmation screen:
+
+- Lesson identified.
+- Score declared by report.
+- Correct answers.
+- Incorrect answers.
+- Homework.
+- Strong skills.
+- Knowledge gaps.
+- Required next-lesson checks.
+- Raw report available in an expandable panel.
+
+The student must confirm submission.
+
+## 9.6. Trust level of imported results
+
+The platform must distinguish:
+
+**Student-submitted result**
+Information supplied by the student from an external ChatGPT conversation.
+
+**Administrator-confirmed result**
+Information reviewed and approved by the administrator.
+
+The website cannot independently prove the validity of a ChatGPT result without trusted integration or human review.
+
+Do not treat structured JSON as cryptographically authenticated evidence.
+
+## 9.7. No structured report available
+
+Provide a fallback manual form.
+
+If the student pastes arbitrary plain text that does not contain a valid report, do not use keyword heuristics to invent a score or classify skills.
+
+Instead:
+
+- Show validation issues.
+- Allow manual completion.
+- Mark the result as self-reported.
+- Allow submission for mentor review.
+
+---
+
+# 10. AUTOMATIC NEXT-LESSON PROMPT ASSEMBLY
+
+## 10.1. Main objective
+
+Once a valid report has been saved, the platform must automatically prepare the next lesson prompt.
+
+No generative AI is used.
+
+The composition must be deterministic.
+
+## 10.2. Carryover engine
+
+Develop a `PromptAssemblyService`.
+
+Responsibilities:
+
+- Retrieve the published prompt for the next lesson.
+- Retrieve the prior lesson result.
+- Retrieve mandatory rechecks.
+- Retrieve outstanding homework.
+- Retrieve persistent older gaps.
+- Retrieve relevant mentor instructions.
+- Assemble and format the final prompt.
+- Prevent duplicate instructions.
+- Preserve every mandatory error recheck.
+- Save the generated prompt snapshot.
+
+## 10.3. Prompt composition behavior
+
+The next prompt should start with a structured carryover section.
+
+Example:
+
+**«ВХОДНЫЕ ИНСТРУКЦИИ ДЛЯ M01-T01-U02»**
+
+Include:
+
+- What was studied.
+- Previous assessment results.
+- Every error requiring rechecking.
+- Homework to be verified.
+- Other important previous-lesson knowledge.
+- Persistent gaps.
+- Explicit instructions prohibiting hints during entry testing.
+
+Then insert the official content of the next lesson according to the configured assembly format.
+
+## 10.4. No loss of errors
+
+If the previous lesson contains three mandatory rechecks, the next lesson must include all three.
+
+If an error persists across multiple lessons, retain it in the knowledge gap registry until resolved according to the course rules.
+
+## 10.5. Idempotency
+
+Submitting the same report twice must not duplicate:
+
+- Progress.
+- Skills.
+- Mandatory rechecks.
+- Homework.
+- Administrator notifications.
+
+Store unique attempt IDs and report IDs.
+
+---
+
+# 11. INTERACTIVE KNOWLEDGE MAP
+
+Route: `/knowledge-map`
+
+This is the visual centerpiece of the entire application.
+
+## 11.1. Visual concept
+
+Create a large interactive 2D graph resembling an illuminated aviation route network.
+
+**Important: this is a knowledge dependency graph, not a geographical map.**
+
+Visual inspiration:
+
+- Airline route trajectories.
+- Complex infrastructure diagrams.
+- Connected constellations.
+- Modern network topology visualizations.
+
+Each knowledge element is represented as a rectangular node.
+
+Connections are curved lines resembling airplane flight routes.
+
+The user should feel like they are exploring a vast interconnected technical knowledge universe.
+
+## 11.2. Graph hierarchy
+
+Represent three levels:
+
+**Level 1 — Disciplines**
+18 large module nodes / clusters.
+
+**Level 2 — Topics**
+Smaller rectangular nodes inside or connected to a discipline.
+
+**Level 3 — Skills and lesson-level competencies**
+Detailed nodes visible after entering or expanding a topic.
+
+Allow users to zoom from the entire educational route down to individual knowledge elements.
+
+## 11.3. Node design
+
+Each node must display:
+
+- Identifier.
+- Short title.
+- Status icon.
+- Mastery indicator.
+- Progress marker.
+
+Potential statuses:
+
+- Not started.
+- Available.
+- In progress.
+- Studied.
+- Needs review.
+- Confirmed.
+- Locked.
+
+Use distinct visual treatments and not color alone.
+
+## 11.4. Graph edges
+
+Edges represent meaningful relationships.
+
+Supported types:
+
+- Prerequisite.
+- Application of previous knowledge.
+- Related concept.
+- Interdisciplinary connection.
+
+Use different line treatments:
+
+- Solid line for essential prerequisites.
+- Curved cyan line for an active learning route.
+- Dashed line for related concepts.
+- Highlighted directional edge for future knowledge applications.
+
+Do not draw relationships without a real dependency record.
+
+## 11.5. Flight-route appearance
+
+Implement:
+
+- Smooth Bézier curved paths.
+- Subtle moving light points on selected active routes.
+- Soft edge glow on hover.
+- Direction indicators.
+- Visually distinct active trajectory.
+- Dimmed unrelated nodes when one node is selected.
+- Clean readable labels.
+
+Avoid a chaotic spiderweb.
+
+Use clustering and progressive detail based on zoom level.
+
+## 11.6. Graph interactions
+
+Users must be able to:
+
+- Pan.
+- Zoom.
+- Fit the graph to screen.
+- Search nodes by name or code.
+- Filter by discipline.
+- Filter by knowledge state.
+- Click nodes.
+- Open node details.
+- Highlight incoming prerequisites.
+- Highlight future dependent topics.
+- Navigate to the corresponding lesson or topic.
+- Reset the graph view.
+
+## 11.7. Node detail panel
+
+When clicking a knowledge node, show a side panel containing:
+
+- Full name.
+- Description.
+- Related discipline and topic.
+- Linked lessons.
+- Prerequisite knowledge.
+- Future applications.
+- Current progress.
+- Skill status.
+- Verified and unverified evidence.
+- Related errors.
+- Last successful check.
+- Action to open learning material.
+
+## 11.8. Administrator graph editor
+
+Administrators must be able to:
+
+- Add skill nodes.
+- Edit node descriptions.
+- Assign nodes to topics.
+- Define prerequisites.
+- Add interdisciplinary connections.
+- Remove relationships.
+- Change node positions.
+- Preview resulting map.
+- Publish graph changes.
+
+Validate prerequisite graph cycles where they would make lesson unlocking impossible.
+
+Do not allow arbitrary content editing from student accounts.
+
+## 11.9. Performance
+
+The knowledge graph must remain responsive as the course grows.
+
+Use:
+
+- Collapsed module clusters.
+- On-demand loading of deeper detail.
+- Layout caching.
+- Memoized node rendering.
+- Level-of-detail rules.
+
+Avoid rendering hundreds of animated SVG connections unnecessarily.
+
+## 11.10. Mobile fallback
+
+On mobile devices, provide:
+
+- Simplified interactive graph for smaller clusters.
+- Searchable hierarchical topic list.
+- Same underlying knowledge and statuses.
+
+All information available on desktop must remain accessible on mobile.
+
+---
+
+# 12. EXTENDED LEARNING PROGRESS SYSTEM
+
+Route: `/progress`
+
+Separate learning activity from actual knowledge mastery.
+
+## 12.1. Completion progress
+
+Track:
+
+- Opened lessons.
+- Submitted lesson reports.
+- Completed lessons.
+- Completed homework.
+- Passed control works.
+- Passed exams.
+- Completed disciplines.
+
+## 12.2. Knowledge mastery
+
+Track independently:
+
+- Concept introduced.
+- Concept practiced.
+- Concept answered correctly.
+- Concept answered incorrectly.
+- Recheck pending.
+- Recheck passed.
+- Later confirmation obtained.
+- Mentor confirmed.
+
+A successfully completed lesson does not automatically prove mastery of all its concepts.
+
+## 12.3. Evidence-based scoring
+
+Maintain evidence for each skill:
+
+- Lesson reference.
+- Question ID.
+- Result.
+- Attempt.
+- Source of evidence.
+- Verification status.
+- Timestamp.
+
+Differentiate student-submitted and administrator-confirmed metrics.
+
+## 12.4. Charts
+
+Create the following interactive views:
+
+- Overall course completion.
+- Progress by discipline.
+- Knowledge mastery by discipline.
+- Activity heatmap.
+- Homework completion over time.
+- Assessment results over time.
+- Number of unresolved gaps.
+- Gap resolution history.
+- Exam grades.
+- Retake timeline.
+- Learning streak.
+
+Use actual stored values.
+
+## 12.5. What to show when data is missing
+
+Never invent a score.
+
+Display:
+
+- Нет данных.
+- Ожидает первого тестирования.
+- Не подтверждено.
+- Пока недостаточно результатов.
+
+Charts must show meaningful empty states.
+
+---
+
+# 13. MOTIVATION AND GAMIFICATION
+
+The platform should actively support long-term learning motivation.
+
+However, motivational indicators must be based on meaningful activity.
+
+## 13.1. Progress feedback
+
+Examples:
+
+- «Закрыта первая тема».
+- «Устранён пробел в знаниях».
+- «Успешно пройдена контрольная».
+- «Освоена новая ветка знаний».
+- «Подтверждено понимание темы».
+
+## 13.2. Achievements
+
+Create achievement categories:
+
+- First lesson completed.
+- First homework verified.
+- First control work passed.
+- First exam passed.
+- First module completed.
+- Multiple consecutive study days.
+- Previously failed concept successfully relearned.
+- Strong performance across related disciplines.
+
+No achievement should require artificially inflating learning time or repeatedly submitting the same data.
+
+## 13.3. Learning streak
+
+Count days with meaningful recorded study events.
+
+Do not pretend the website can measure time spent in ChatGPT.
+
+## 13.4. Next learning goal
+
+Offer one clear recommended next action based on:
+
+- Unlock conditions.
+- Outstanding report.
+- Outstanding homework.
+- Required rechecks.
+- Upcoming control work.
+- Mentor intervention.
+
+Use deterministic prioritization rules.
+
+## 13.5. Encouragement
+
+Use restrained and adult-appropriate language.
+
+Do not infantilize the learner.
+
+Avoid manipulative notifications or punishment for missing study days.
+
+---
+
+# 14. HOMEWORK MANAGEMENT
+
+Route: `/homework`
+
+The system must store official homework assigned after each lesson.
+
+Support:
+
+- Homework ID.
+- Lesson ID.
+- Title.
+- Instructions.
+- Due date, if explicitly assigned.
+- Submission status.
+- Student answer.
+- Associated skills.
+- Mentor feedback.
+- Verification status.
+
+Homework can be:
+
+- Definition explanation.
+- Process explanation.
+- Calculation.
+- Problem solution.
+- Practical experiment.
+- Technical report.
+- Interdisciplinary task.
+
+Homework assigned in the imported lesson report must become visible in the student's homework list after confirmation.
+
+The next lesson's entry control must check homework together with prior mistakes and additional important knowledge.
+
+---
+
+# 15. ASSESSMENTS, CONTROL WORKS AND EXAMS
+
+## 15.1. Assessment hierarchy
+
+Support:
+
+1. Daily lesson assessment.
+2. Topic-level control work.
+3. Discipline final exam.
+4. Retake attempts.
+
+These must be distinct assessment types.
+
+## 15.2. Control works
+
+Administrators can create and publish control works associated with completed topics.
+
+Store:
+
+- Title.
+- Covered topics.
+- Questions.
+- Practical tasks.
+- Maximum points.
+- Passing rules.
+- Attempts.
+- Student submissions.
+- Scores.
+- Feedback.
+
+Every control-work result, successful or unsuccessful, must create an administrator notification.
+
+## 15.3. Discipline exam
+
+Each of the 18 disciplines has its own exam.
+
+Plan for approximately 24 tickets per discipline.
+
+Each ticket contains:
+
+- Two theoretical questions.
+- One practical assignment.
+
+Question bank constraints per discipline:
+
+- Maximum 50 unique theoretical questions.
+- Maximum 25 unique practical assignments.
+
+## 15.4. Open exam bank
+
+**All approved tickets and their complete questions must be openly visible to the student before the exam.**
+
+The exam bank is official preparation material.
+
+Create an exam preparation screen with:
+
+- Full ticket list.
+- Theory question catalog.
+- Practical assignment catalog.
+- Topic filters.
+- Links to relevant lessons.
+- Preparation status.
+- Personal preparation notes.
+
+Do not hide exam questions from the student.
+
+## 15.5. Grading scale
+
+Implement:
+
+- Below 50% — Не зачтено.
+- 50% to below 70% — Зачтено.
+- 70% to below 80% — Хорошо.
+- 80% to 100% — Отлично.
+
+The exact threshold values must be inclusive at 50, 70 and 80.
+
+Use stored scoring rubrics.
+
+Do not allow client-side score manipulation.
+
+## 15.6. Exam score weights
+
+Support administrator-configurable weights.
+
+Suggested default:
+
+- Theory question 1: 30 points.
+- Theory question 2: 30 points.
+- Practical task: 40 points.
+
+This is a configurable suggestion, not a hardcoded curriculum requirement.
+
+## 15.7. Retakes
+
+If score is below 50%, mark the assessment as not passed.
+
+Permit up to three retakes after the initial attempt, according to administrator-approved policy.
+
+Each attempt is stored separately.
+
+Provide a clear explanation of failed criteria before another attempt.
+
+Notify the administrator when the third retake becomes necessary.
+
+After three unsuccessful retakes, prevent additional attempts until an administrator decides on the next action.
+
+## 15.8. Results from ChatGPT
+
+The platform may import external exam reports.
+
+Imported grades remain student-submitted until reviewed according to administrative policy.
+
+For official confirmed examinations, the administrator must be able to validate the score or administer an independent assessment.
+
+---
+
+# 16. ADMINISTRATOR DASHBOARD
+
+Route: `/admin`
+
+Build a distinct full-featured administrator workspace.
+
+## 16.1. Overview dashboard
+
+Display:
+
+- Total students.
+- Active students.
+- Published disciplines.
+- Completed lessons.
+- Pending reports.
+- Pending control-work results.
+- Pending exam results.
+- Students requiring intervention.
+- Repeated knowledge gaps.
+- Recent study activity.
+
+## 16.2. Student directory
+
+Route: `/admin/students`
+
+Support:
+
+- Search.
+- Filtering.
+- Student profile.
+- Progress status.
+- Last activity.
+- Current lesson.
+- Assessment status.
+- Risk indicators.
+- Direct navigation to the student's record.
+
+## 16.3. Individual student profile
+
+Route: `/admin/students/:studentId`
+
+Display:
+
+- Overall course timeline.
+- Current module and topic.
+- Completed lessons.
+- Submitted reports.
+- Homework.
+- Tests.
+- Control works.
+- Exams.
+- Retakes.
+- Knowledge gaps.
+- Confirmed strengths.
+- Activity history.
+- Mentor decisions.
+
+Allow administrators to inspect the full evidence behind each displayed score or progress value.
+
+## 16.4. Administrator report inbox
+
+Route: `/admin/reports`
+
+This is a mandatory functional component.
+
+Reports must be generated for:
+
+- Every control work.
+- Every exam.
+- Every retake.
+- Critical knowledge gaps.
+- Mentor intervention requests.
+- Student messages.
+
+**Control-work and exam reports must appear regardless of the score.**
+
+The inbox should support:
+
+- Unread.
+- Read.
+- Requires action.
+- Approved.
+- Returned for correction.
+- Archived.
+
+Provide filters by student, discipline, assessment type and date.
+
+Clicking a report opens its full details.
+
+## 16.5. Report details
+
+Show:
+
+- Student.
+- Lesson/assessment.
+- Submitted time.
+- Attempt number.
+- Question results.
+- Score.
+- Strengths.
+- Errors.
+- Submitted raw report.
+- Verification status.
+- Related knowledge nodes.
+
+Administrator actions:
+
+- Approve.
+- Request correction.
+- Add comment.
+- Assign additional study.
+- Flag a persistent gap.
+- Correct an official score with a reason.
+- Unlock or temporarily hold progression.
+
+Every such action must be audited.
+
+## 16.6. Admin notifications
+
+Create persistent notifications.
+
+Do not depend on unreliable temporary in-browser messages.
+
+Store notification records in Firestore.
+
+Support unread counts, filters and acknowledgment.
+
+Prevent duplicate notifications for the same event.
+
+Email notifications are optional and must only be enabled when the delivery integration is configured.
+
+---
+
+# 17. ADMINISTRATOR CONTENT MANAGEMENT
+
+Route: `/admin/content`
+
+Implement a real curriculum management interface.
+
+## 17.1. Editing hierarchy
+
+Administrators can manage:
+
+- Courses.
+- Disciplines.
+- Topics.
+- Lessons.
+- Skills.
+- Relationships.
+- Homework templates.
+- Control works.
+- Exam banks.
+
+## 17.2. Lesson editor
+
+Include fields for:
+
+- Lesson ID.
+- Title.
+- Description.
+- Objectives.
+- Estimated duration.
+- Full prompt text.
+- Module instructions.
+- Prerequisites.
+- Associated skill IDs.
+- Links to previous and future topics.
+- Status.
+- Version.
+- Publication date.
+
+Provide Markdown editing and preview.
+
+## 17.3. Publication workflow
+
+Use:
+
+Draft → Under review → Published → Archived.
+
+Students can only access published lesson versions.
+
+Editing a published prompt must not silently alter the exact prompt previously used in an earlier student attempt.
+
+Use versioned snapshots.
+
+## 17.4. Content import
+
+Allow administrators to import curriculum data using structured JSON or CSV where appropriate.
+
+Validate identifiers and relationships.
+
+Reject duplicate identifiers or invalid references with a clear error report.
+
+Provide export functions.
+
+## 17.5. Exam bank management
+
+Admin interface for:
+
+- Theory questions.
+- Practical assignments.
+- Ticket composition.
+- Topic coverage.
+- Difficulty level.
+- Scoring rubric.
+- Publication status.
+
+Validate limits of 50 theoretical questions and 25 practical tasks per discipline.
+
+---
+
+# 18. COMMUNICATION WITH ADMINISTRATOR
+
+Route: `/messages`
+
+Provide in-platform messaging between student and mentor.
+
+## 18.1. Student messages
+
+Student can:
+
+- Ask for help.
+- Report confusing explanations.
+- Dispute an assessment.
+- Request clarification on course progression.
+- Report technical issues.
+
+## 18.2. Context attachment
+
+Messages can reference:
+
+- Lesson.
+- Topic.
+- Assessment.
+- Homework.
+- Knowledge gap.
+
+## 18.3. Mentor workflow
+
+Administrator can:
+
+- Reply.
+- Mark resolved.
+- Flag urgent.
+- Attach corrective instructions.
+- Request additional evidence.
+- Assign a follow-up lesson.
+
+The platform is not an AI chat application.
+
+These are messages between actual users.
+
+---
+
+# 19. DATABASE MODEL
+
+Create a persistent, typed data model.
+
+Suggested core entities:
+
+**users**
+- uid
+- email
+- displayName
+- role
+- status
+- createdAt
+- lastSeenAt
+
+**modules**
+- id
+- code
+- title
+- introduction
+- status
+- order
+- version
+
+**topics**
+- id
+- moduleId
+- code
+- title
+- description
+- order
+- status
+
+**lessons**
+- id
+- topicId
+- code
+- title
+- promptTemplate
+- promptVersion
+- durationEstimate
+- status
+- order
+- skillIds
+- prerequisiteIds
+
+**skills**
+- id
+- code
+- name
+- description
+- topicId
+- moduleId
+
+**skillRelations**
+- fromSkillId
+- toSkillId
+- type
+- explanation
+
+**enrollments**
+- userId
+- courseId
+- status
+- createdAt
+
+**lessonAttempts**
+- id
+- userId
+- lessonId
+- promptVersion
+- promptSnapshot
+- status
+- startedAt
+- submittedAt
+
+**lessonReports**
+- id
+- attemptId
+- rawReport
+- structuredReport
+- validationStatus
+- reviewStatus
+- createdAt
+
+**assessmentResults**
+- id
+- userId
+- assessmentId
+- attemptNo
+- score
+- maxScore
+- grade
+- verificationStatus
+
+**homework**
+- id
+- lessonId
+- title
+- instructions
+- skillIds
+
+**homeworkSubmissions**
+- id
+- homeworkId
+- userId
+- content
+- status
+- feedback
+
+**knowledgeEvidence**
+- id
+- userId
+- skillId
+- sourceType
+- sourceId
+- outcome
+- verificationStatus
+- createdAt
+
+**knowledgeGaps**
+- id
+- userId
+- skillId
+- sourceLessonId
+- description
+- status
+- mandatoryRecheck
+- lastReviewedAt
+
+**exams**
+- id
+- moduleId
+- status
+- configuration
+
+**examQuestions**
+- id
+- moduleId
+- type
+- prompt
+- topicIds
+- rubric
+
+**examTickets**
+- id
+- examId
+- theoryQuestionIds
+- practicalQuestionId
+
+**notifications**
+- id
+- recipientUserId
+- eventType
+- relatedEntityId
+- readAt
+- createdAt
+
+**messages**
+- id
+- senderId
+- recipientId
+- subject
+- content
+- status
+- createdAt
+
+**auditEvents**
+- id
+- actorId
+- action
+- targetType
+- targetId
+- timestamp
+- reason
+
+Adapt these to Firestore document and subcollection design as appropriate.
+
+Avoid giant single-document arrays.
+
+Design indexes for user progress, reports, notifications and learning activity.
+
+Use server-generated timestamps where authoritative event ordering matters.
+
+---
+
+# 20. PROGRESS COMPUTATION RULES
+
+All progress must be computed from actual stored states.
+
+## 20.1. Lesson completion
+
+A lesson is not completed merely because the prompt was copied.
+
+Completion requires a submitted valid lesson result and fulfillment of the configured progression policy.
+
+## 20.2. Provisional and confirmed status
+
+Maintain separate values:
+
+- Submitted progress.
+- Mentor-confirmed progress.
+
+Do not combine the two into one misleading score.
+
+## 20.3. Module completion
+
+Define module completion from:
+
+- Required published lessons.
+- Required homework.
+- Required control works.
+- Final exam status.
+- Administrator-configured requirements.
+
+## 20.4. Skill mastery
+
+Use evidence-based status calculation.
+
+Skill completion must not be inferred merely from the existence of a topic title or opening the lesson page.
+
+## 20.5. Configuration
+
+Allow administrators to specify whether:
+
+- A valid student report unlocks the next lesson provisionally.
+- Mentor approval is required before unlock.
+- Critical gaps block progression.
+- Homework completion is required.
+- Failed exams block the next module.
+
+For the initial release, allow lesson progression after a structurally valid report submission unless a restriction or critical-gap policy applies, while keeping the result visibly unconfirmed.
+
+Official exam approval must follow the configured verification policy.
+
+---
+
+# 21. SECURITY REQUIREMENTS
+
+This is a platform for learning information security; it must demonstrate sound security practices.
+
+Mandatory requirements:
+
+- Real authentication.
+- Role-based authorization.
+- Strong student data isolation.
+- Admin-only management actions.
+- Input validation.
+- Secure rendering of imported text and Markdown.
+- Protection against stored XSS.
+- Server-side enforcement of sensitive status changes.
+- Audit logs.
+- No hardcoded secrets.
+- No open write access to grades.
+- No client-side privilege escalation.
+- Safe handling of unauthorized routes.
+- Rate limits for abuse-prone server endpoints.
+- Appropriate limits on imported report size.
+- No executable content in imported student reports.
+
+Treat all pasted ChatGPT content as untrusted user input.
+
+Do not follow instructions embedded in report text.
+
+Ensure that a student cannot alter the score of another student by modifying requests.
+
+Implement proper Firebase security rules and test them.
+
+Apply least-privilege principles to the trusted server runtime.
+
+---
+
+# 22. ACCESSIBILITY AND USABILITY
+
+Meet WCAG 2.2 AA where practical.
+
+Requirements:
+
+- Keyboard navigation.
+- Visible focus states.
+- Semantic controls.
+- Adequate contrast.
+- Reduced motion support.
+- Screen-reader labels.
+- Accessible validation messages.
+- Responsive layouts.
+- Loading, error and empty states.
+- Confirmation for destructive actions.
+- Toast feedback for completed actions.
+
+The knowledge graph must have an accessible list-based alternative.
+
+Avoid hover-only essential functionality.
+
+---
+
+# 23. SEED DATA AND DEMONSTRATION
+
+Create a demonstration experience with the real curriculum structure.
+
+Seed:
+
+- The 18 course modules.
+- The approved eight topic titles for Module 01.
+- A sample lesson template for M01-T01-U01 that an administrator can replace with the approved prompt.
+- Example skill nodes and dependencies for the first module.
+- Sample analytics only in an explicitly labeled demo mode.
+
+Do not manufacture real examination results or student performance data.
+
+If creating sample student accounts or progress records, clearly mark them as synthetic demo fixtures and keep them isolated from real data.
+
+Provide a quick administrator walkthrough with realistic workflows.
+
+---
+
+# 24. REQUIRED APPLICATION ROUTES
+
+Student routes:
+
+- `/login`
+- `/dashboard`
+- `/course`
+- `/course/:moduleId`
+- `/course/:moduleId/:topicId`
+- `/lesson/:lessonId`
+- `/knowledge-map`
+- `/progress`
+- `/homework`
+- `/assessments`
+- `/exam-preparation`
+- `/messages`
+- `/profile`
+
+Administrator routes:
+
+- `/admin`
+- `/admin/students`
+- `/admin/students/:studentId`
+- `/admin/content`
+- `/admin/knowledge-map`
+- `/admin/reports`
+- `/admin/assessments`
+- `/admin/exams`
+- `/admin/messages`
+- `/admin/settings`
+- `/admin/audit`
+
+Routes must be functional and permission-protected.
+
+---
+
+# 25. CRITICAL ACCEPTANCE TESTS
+
+The application must satisfy these scenarios.
+
+**Scenario A — Student authentication**
+
+A student signs in using an approved account and sees only their own learning information.
+
+**Scenario B — Course navigation**
+
+The student opens Module 01, Topic 01 and the first available lesson.
+
+**Scenario C — Prompt copy**
+
+The student copies the complete prompt. The copied text exactly matches the assembled prompt snapshot.
+
+**Scenario D — External learning**
+
+The student opens ChatGPT in another tab. The platform does not pretend to control that session.
+
+**Scenario E — Report import**
+
+The student pastes a valid structured report, previews it and saves it successfully.
+
+**Scenario F — Invalid report**
+
+Invalid JSON produces a useful error and does not corrupt progress.
+
+**Scenario G — Carryover**
+
+Three mandatory knowledge-gap rechecks in lesson N are all present in the generated prompt for lesson N+1.
+
+**Scenario H — Homework transfer**
+
+Homework from lesson N appears both in the student's homework panel and the next lesson's entry instructions.
+
+**Scenario I — Persistent storage**
+
+Refresh the browser, log out and log in again. Saved reports and progress remain available.
+
+**Scenario J — Student isolation**
+
+Student A cannot view or modify Student B's reports by entering different IDs or modifying requests.
+
+**Scenario K — Administrator review**
+
+The administrator opens a submitted report, reviews it and confirms the result.
+
+**Scenario L — Knowledge map**
+
+A skill node changes its provisional/confirmed appearance when supported by actual recorded evidence.
+
+**Scenario M — Interdisciplinary links**
+
+Clicking a knowledge node displays its real prerequisites and future applications.
+
+**Scenario N — Control-work notification**
+
+A passed control work generates an administrator inbox event.
+
+**Scenario O — Failed control work**
+
+A failed control work also generates an administrator inbox event and indicates required correction.
+
+**Scenario P — Exam preparation**
+
+The student can browse all published exam tickets and questions.
+
+**Scenario Q — Exam grading**
+
+Scores below 50, exactly 50, exactly 70 and exactly 80 are classified correctly.
+
+**Scenario R — Retakes**
+
+Retakes are counted correctly; intervention is required under the configured third-retake rule.
+
+**Scenario S — Administrator permissions**
+
+A student cannot publish lessons, confirm grades or modify official exam banks.
+
+**Scenario T — Empty state**
+
+A new student with zero study history sees an attractive and honest empty state rather than fictional analytics.
+
+**Scenario U — Responsive interface**
+
+The dashboard, lesson page and knowledge explorer remain functional on mobile.
+
+**Scenario V — No AI calls**
+
+Normal platform workflows do not invoke Gemini, OpenAI or any other model API.
+
+---
+
+# 26. IMPLEMENTATION PRIORITIES
+
+Build in coherent working milestones.
+
+## Milestone 1 — Core foundation
+
+Implement:
+
+- Responsive design system.
+- Authentication.
+- Roles.
+- Real database connection.
+- Dashboard layout.
+- Curriculum navigation.
+- Lesson records.
+- Administrator content editing.
+
+## Milestone 2 — Lesson lifecycle
+
+Implement:
+
+- Lesson prompt assembly.
+- Copy prompt.
+- External ChatGPT link.
+- Structured report parser.
+- Report storage.
+- Homework tracking.
+- Carryover instructions.
+- Next-lesson unlock logic.
+
+## Milestone 3 — Knowledge intelligence
+
+Implement:
+
+- Interactive graph.
+- Skill dependencies.
+- Learning gaps.
+- Strong skill evidence.
+- Detailed progress analytics.
+- Skill status visualization.
+
+## Milestone 4 — Administrator management
+
+Implement:
+
+- Student directory.
+- Individual student analytics.
+- Report inbox.
+- Mentor messages.
+- Report review workflow.
+- Content publishing.
+- Audit logs.
+
+## Milestone 5 — Assessment infrastructure
+
+Implement:
+
+- Control works.
+- Open exam banks.
+- Exam tickets.
+- Scoring rubrics.
+- Retakes.
+- Mentor intervention rules.
+- Assessment reports.
+
+## Milestone 6 — Polish and quality assurance
+
+Implement:
+
+- Full responsive refinements.
+- Accessibility.
+- Animations.
+- Performance optimization.
+- Security rules verification.
+- Error handling.
+- Acceptance testing.
+
+These are implementation milestones, not excuses to create only a nonfunctional prototype.
+
+Prioritize one fully working vertical slice before expanding superficial screens.
+
+---
+
+# 27. CODE QUALITY REQUIREMENTS
+
+Use:
+
+- TypeScript strict mode.
+- Reusable components.
+- Clear folder structure.
+- Separated UI and business logic.
+- Domain services.
+- Typed database models.
+- Centralized validation.
+- Explicit loading and error states.
+- Deterministic progress computations.
+- Unit tests for scoring and prompt assembly.
+- Integration tests for core student and administrator flows.
+
+Prefer maintainable code over excessively large components.
+
+Do not place all application logic into a single file.
+
+Do not create fake backend functions that merely return hardcoded example data.
+
+---
+
+# 28. FINAL DELIVERY EXPECTATIONS
+
+The result must be a functioning full-stack application with:
+
+1. Beautiful Russian-language UI.
+2. Real student and administrator accounts.
+3. Persistent database.
+4. Real curriculum structure.
+5. Working lesson prompt distribution.
+6. Working structured result import.
+7. Automatic deterministic next-prompt assembly.
+8. Homework tracking.
+9. Knowledge gap tracking.
+10. Interactive flight-route-style knowledge graph.
+11. Detailed learning analytics.
+12. Administrator reporting.
+13. Student/mentor messaging.
+14. Control works and open exam banks.
+15. Grading and retakes.
+16. Working permissions.
+17. Responsive design.
+18. Tests for critical workflows.
+
+Do not stop after producing wireframes or a component showcase.
+
+Begin implementation with architecture and the first working vertical slice:
+
+**Login → Student dashboard → Open available lesson → Copy prompt → Import report → Save results → Generate next lesson prompt → Administrator views submitted result.**
+
+Verify this complete workflow using persistent data.
+
+After the core workflow is functional, implement the knowledge graph, analytics and remaining management capabilities.
+
+Clearly distinguish implemented features from unfinished functionality.
+
+The finished product should feel like a premium, focused educational platform where technical knowledge forms a visible, evolving network and every meaningful learning achievement contributes to a transparent educational trajectory.
+
+**START BUILDING THE ACTUAL APPLICATION NOW.**

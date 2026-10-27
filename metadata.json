@@ -1,0 +1,6 @@
+{
+  "name": "NEXUS Academy",
+  "description": "Интерактивная образовательная платформа по кибербезопасности и телекоммуникациям с графом знаний и управлением траекторией обучения.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
