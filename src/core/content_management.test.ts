@@ -70,16 +70,16 @@ test('2. Topics Check: Module M01 contains exactly 8 approved topics', () => {
   }
 });
 
-test('3. Lessons Draft Check: M01 has exactly 52 draft lessons initially', () => {
+test('3. Lessons Check: M01 has exactly 52 loaded lessons ready for study', () => {
   const m01Lessons = getLessons('M01');
   assert.equal(m01Lessons.length, 52, 'M01 must contain exactly 52 lessons');
   
-  // All 52 lessons should be loaded in draft status initially
-  const draftLessons = m01Lessons.filter((l) => l.status === 'draft');
+  // All 52 lessons should be loaded and approved for study
+  const approvedLessons = m01Lessons.filter((l) => l.status === 'approved');
   assert.equal(
-    draftLessons.length,
+    approvedLessons.length,
     52,
-    'All 52 lessons of M01 must be in draft status upon import'
+    'All 52 lessons of M01 must be approved upon initial load for students'
   );
 });
 
@@ -178,6 +178,9 @@ test('8. Draft Guard: Unpublishing a lesson switches status back to draft', () =
 
   const draftLesson = getLessonById('M01-T01-U01')!;
   assert.equal(draftLesson.status, 'draft', 'Lesson must now be in draft');
+
+  // Restore approved status for student learning
+  saveLesson({ ...draftLesson, status: 'approved' }, 'Восстановление публикации', 'admin-mentor', 'Дмитрий');
 });
 
 test('9. Open Exam Tickets: M01-EX01 has 24 tickets in draft status with correct limits', () => {

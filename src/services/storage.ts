@@ -25,7 +25,7 @@ import {
 } from '../types';
 import seedData from '../../data/nexus_academy.json' with { type: 'json' };
 
-const DB_KEY = 'nexus_academy_db_v5';
+const DB_KEY = 'nexus_academy_db_v6';
 const CURRENT_USER_KEY = 'nexus_academy_current_user_id';
 
 export interface DatabaseState {
@@ -164,6 +164,11 @@ export function loadDatabase(): DatabaseState {
           // Self-heal: ensure lessons array is populated with at least seed lessons
           if (!Array.isArray(parsed.lessons) || parsed.lessons.length < seed.lessons.length) {
             parsed.lessons = seed.lessons;
+          } else {
+            const hasAnyApproved = parsed.lessons.some((l: any) => l.moduleId === 'M01' && l.status === 'approved');
+            if (!hasAnyApproved) {
+              parsed.lessons = seed.lessons;
+            }
           }
           if (!Array.isArray(parsed.topics) || parsed.topics.length < seed.topics.length) {
             parsed.topics = seed.topics;
@@ -291,25 +296,27 @@ export function saveTopic(topicItem: TopicItem): void {
 }
 
 // ---------------- Lessons Management ----------------
-export function getLessons(filter?: {
+export function getLessons(filter?: string | {
   moduleId?: string;
   topicId?: string;
   includeUnpublished?: boolean;
 }): LessonItem[] {
   const db = loadDatabase();
-  let list = db.lessons;
+  let list = db.lessons || [];
   const user = getCurrentUser();
 
-  // If student and not explicitly requested to include unpublished, only show published lessons!
-  if (user.role === 'student' && !filter?.includeUnpublished) {
-    list = list.filter((l) => l.status === 'published');
+  const filterObj = typeof filter === 'string' ? { moduleId: filter } : filter;
+
+  // If student and not explicitly requested to include unpublished, show approved lessons
+  if (user.role === 'student' && !filterObj?.includeUnpublished) {
+    list = list.filter((l) => l.status === 'approved' || (l as any).status === 'published');
   }
 
-  if (filter?.moduleId) {
-    list = list.filter((l) => l.moduleId === filter.moduleId);
+  if (filterObj?.moduleId) {
+    list = list.filter((l) => l.moduleId === filterObj.moduleId);
   }
-  if (filter?.topicId) {
-    list = list.filter((l) => l.topicId === filter.topicId);
+  if (filterObj?.topicId) {
+    list = list.filter((l) => l.topicId === filterObj.topicId);
   }
 
   return list.sort((a, b) => a.order - b.order);

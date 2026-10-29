@@ -105,7 +105,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ lessonId, navigate }) =>
   }
 
   // Guard: if lesson is draft or archived and user is student, do not allow opening (Test 8)
-  if (lesson.status !== 'published' && currentUser.role === 'student') {
+  if (lesson.status !== 'approved' && lesson.status !== 'published' && currentUser.role === 'student') {
     return (
       <div className="max-w-md mx-auto my-24 p-8 rounded-2xl border border-amber-800 bg-amber-950/40 text-center space-y-4">
         <Clock className="w-12 h-12 text-amber-400 mx-auto" />
