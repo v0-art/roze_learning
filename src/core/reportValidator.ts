@@ -83,11 +83,11 @@ export function validateStructuredReport(
     };
   }
 
-  // Schema version check
+  // Schema version check (v1.0 baseline and v1.1 extended entry-control per ТЗ v2.0)
   if (!parsed.schemaVersion || typeof parsed.schemaVersion !== 'string') {
-    errors.push('Поле "schemaVersion" обязательно (ожидается "1.0").');
-  } else if (parsed.schemaVersion !== '1.0') {
-    errors.push(`Неподдерживаемая версия схемы: "${parsed.schemaVersion}". Поддерживается: "1.0".`);
+    errors.push('Поле "schemaVersion" обязательно (ожидается "1.0" или "1.1").');
+  } else if (parsed.schemaVersion !== '1.0' && parsed.schemaVersion !== '1.1') {
+    errors.push(`Неподдерживаемая версия схемы: "${parsed.schemaVersion}". Поддерживается: "1.0" и "1.1".`);
   }
 
   // Lesson ID check

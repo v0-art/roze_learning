@@ -79,7 +79,7 @@ export function assembleLessonPrompt(options: PromptAssemblyOptions): AssembledP
 
     carryoverRecheckCount = rechecks.length;
 
-    // 4. Homework to check
+    // 4. Homework to check by ChatGPT model at the start of lesson
     const hwChecks: string[] = [];
     if (previousLessonReport?.nextLessonInstructions?.homeworkChecks) {
       previousLessonReport.nextLessonInstructions.homeworkChecks.forEach((hw) => {
@@ -87,7 +87,12 @@ export function assembleLessonPrompt(options: PromptAssemblyOptions): AssembledP
       });
     }
     pendingHomework.forEach((hw) => {
-      const hwText = `Проверить ДЗ "${hw.title}": ${hw.description}`;
+      let hwText = `Задание "${hw.title}": ${hw.description}`;
+      if (hw.studentAnswer) {
+        hwText += `\n     -> [ОТВЕТ КУРСАНТА]: "${hw.studentAnswer}"\n     -> ИНСТРУКЦИЯ CHATGPT: Проверьте этот ответ курсанта в самом начале урока, укажите ошибки, задайте контрольный вопрос по решению и зачтите или отправьте на переделку.`;
+      } else {
+        hwText += `\n     -> [СТАТУС]: Курсант не прикрепил письменный ответ. Спросите его решение устно перед началом лекции.`;
+      }
       if (!hwChecks.includes(hwText)) hwChecks.push(hwText);
     });
     carryoverHomeworkCount = hwChecks.length;

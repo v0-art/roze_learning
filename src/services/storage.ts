@@ -25,7 +25,7 @@ import {
 } from '../types';
 import seedData from '../../data/nexus_academy.json' with { type: 'json' };
 
-const DB_KEY = 'nexus_academy_db_v6';
+const DB_KEY = 'nexus_academy_db_v9';
 const CURRENT_USER_KEY = 'nexus_academy_current_user_id';
 
 export interface DatabaseState {
@@ -178,6 +178,9 @@ export function loadDatabase(): DatabaseState {
           }
           if (!Array.isArray(parsed.exams) || parsed.exams.length < seed.exams.length) {
             parsed.exams = seed.exams;
+          }
+          if (!Array.isArray(parsed.homework) || parsed.homework.length < seed.homework.length) {
+            parsed.homework = seed.homework;
           }
           inMemoryDb = parsed;
           return inMemoryDb as DatabaseState;
@@ -828,12 +831,68 @@ export function confirmAssessmentByMentor(
   }
 }
 
-export function submitHomeworkAnswer(homeworkId: string, studentAnswer: string): void {
+export function submitHomeworkAnswer(homeworkId: string, studentAnswer: string, user?: User): void {
   const db = loadDatabase();
   const hw = db.homework.find((h) => h.id === homeworkId);
+  const currentUser = user || getCurrentUser();
+  const now = new Date().toISOString();
   if (hw) {
     hw.studentAnswer = studentAnswer;
     hw.status = 'submitted';
+    (hw as any).submittedAt = now;
+
+    db.notifications.unshift({
+      id: `notif-hw-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      eventType: 'homework_submitted',
+      title: `Сдано решение задания: ${hw.title || hw.id}`,
+      description: `Курсант ${currentUser.displayName} отправил решение задания ${hw.id} (${hw.lessonId}).`,
+      studentId: currentUser.id,
+      studentName: currentUser.displayName,
+      relatedEntityId: hw.id,
+      status: 'unread',
+      createdAt: now,
+    });
+
+    db.auditLogs.unshift({
+      id: `audit-${Date.now()}`,
+      actorId: currentUser.id,
+      actorName: currentUser.displayName,
+      action: 'SUBMIT_HOMEWORK',
+      targetType: 'HOMEWORK',
+      targetId: hw.id,
+      reason: `Сдача решения по заданию ${hw.id}`,
+      timestamp: now,
+    });
+
+    saveDatabase(db);
+  }
+}
+
+export function verifyHomeworkItem(
+  homeworkId: string,
+  mentorFeedback: string,
+  verifiedStatus: 'verified' | 'assigned' = 'verified'
+): void {
+  const db = loadDatabase();
+  const hw = db.homework.find((h) => h.id === homeworkId);
+  const mentor = getCurrentUser();
+  const now = new Date().toISOString();
+  if (hw) {
+    hw.status = verifiedStatus;
+    hw.mentorFeedback = mentorFeedback;
+    (hw as any).verifiedAt = now;
+
+    db.auditLogs.unshift({
+      id: `audit-${Date.now()}`,
+      actorId: mentor.id,
+      actorName: mentor.displayName,
+      action: 'VERIFY_HOMEWORK',
+      targetType: 'HOMEWORK',
+      targetId: hw.id,
+      reason: `Рецензия ментора ${mentor.displayName} на задание ${hw.id}: статус ${verifiedStatus}.`,
+      timestamp: now,
+    });
+
     saveDatabase(db);
   }
 }
@@ -864,77 +923,141 @@ export function getGraphEdges(): GraphEdge[] {
 
 export function getGraphData(): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const db = loadDatabase();
-  if (db.graphNodes && db.graphNodes.length > 0) {
-    return { nodes: db.graphNodes, edges: db.graphEdges || [] };
-  }
-
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
 
+  // Level 1: 18 Modules (Airspace Hubs) - 3 rows of 6 modules with generous spacing
   db.modules.forEach((m, idx) => {
+    const col = idx % 6;
+    const row = Math.floor(idx / 6);
     nodes.push({
       id: m.id,
       code: m.code,
       title: m.title,
-      description: m.description,
+      description: m.shortDescription || m.description || "",
       level: 1,
       moduleId: m.id,
-      x: 120 + (idx % 6) * 190,
-      y: 90 + Math.floor(idx / 6) * 170,
+      x: 80 + col * 320,
+      y: 90 + row * 230,
       prerequisites: m.prerequisites || [],
       futureApplications: m.futureApplications || [],
-      status: m.status === 'approved' ? 'mastered' : 'not_started',
+      status: m.code === "M01" ? "available" : "locked",
     });
   });
 
+  // Level 2: 8 Topics of Module 1 (Flight Corridors) - 2 rows of 4 topics
   db.topics.forEach((t, idx) => {
+    const col = idx % 4;
+    const row = Math.floor(idx / 4);
     nodes.push({
       id: t.id,
       code: t.code,
       title: t.title,
-      description: t.description,
+      description: t.description || "",
       level: 2,
       moduleId: t.moduleId,
       topicId: t.id,
-      x: 100 + (idx % 4) * 210,
-      y: 360 + Math.floor(idx / 4) * 160,
+      x: 100 + col * 460,
+      y: 820 + row * 220,
       prerequisites: [],
       futureApplications: [],
-      status: t.status === 'approved' ? 'mastered' : 'not_started',
-    });
-    edges.push({
-      id: `edge-${t.id}-${t.moduleId}`,
-      from: t.moduleId,
-      to: t.id,
-      type: 'interdisciplinary',
+      status: t.status === "approved" ? "studied" : "available",
     });
   });
 
-  db.skills.forEach((s, idx) => {
+  // Level 3: Representative Key Competencies & Skills
+  const representativeSkills = (db.skills || []).slice(0, 16);
+  representativeSkills.forEach((s, idx) => {
+    const col = idx % 8;
+    const row = Math.floor(idx / 8);
     nodes.push({
       id: s.id,
       code: s.code,
       title: s.name,
-      description: s.description,
+      description: s.description || "",
       level: 3,
       moduleId: s.moduleId,
       topicId: s.topicId,
-      x: 70 + (idx % 8) * 150,
-      y: 600 + Math.floor(idx / 8) * 130,
+      x: 80 + col * 230,
+      y: 1300 + row * 180,
       prerequisites: [],
       futureApplications: [],
-      status: 'in_progress',
+      status: "in_progress",
     });
   });
 
-  db.relations.forEach((r, idx) => {
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+
+  // 1. Interdisciplinary cross-module relations from db.relations
+  (db.relations || []).forEach((r, idx) => {
+    if (nodeMap.has(r.fromId) && nodeMap.has(r.toId)) {
+      edges.push({
+        id: r.id || `rel-edge-${idx}`,
+        from: r.fromId,
+        to: r.toId,
+        type: (r.type as any) || "prerequisite",
+        label: r.description || "Межпредметная связь",
+      });
+    }
+  });
+
+  // 2. Trunk air routes connecting prerequisite disciplines
+  const trunkModuleRoutes: Array<[string, string, string]> = [
+    ["M01", "M02", "Схемотехника и элементы"],
+    ["M01", "M03", "Сигналы и электросвязь"],
+    ["M01", "M06", "Сетевая адресация и биты"],
+    ["M01", "M09", "Двоичная логика ЭВМ"],
+    ["M01", "M10", "Алгоритмы вычислений"],
+    ["M02", "M03", "Физические каналы связи"],
+    ["M03", "M04", "Аналого-цифровое преобразование"],
+    ["M04", "M05", "Синхронные транспортные потоки"],
+    ["M05", "M06", "Оптические каналы для пакетов"],
+    ["M06", "M07", "Стек протоколов и маршрутизация"],
+    ["M07", "M08", "Беспроводная передача пакетов"],
+    ["M09", "M10", "Исполнение инструкций процессором"],
+    ["M10", "M11", "Реализация криптоалгоритмов"],
+    ["M11", "M12", "Симметричные и асимметричные шифры"],
+    ["M12", "M14", "Протоколы защищенного обмена"],
+    ["M13", "M15", "Аппаратные векторы атак"],
+    ["M14", "M17", "Защита периметра и шифрование"],
+    ["M15", "M17", "Мониторинг хостов и сети"],
+    ["M17", "M18", "Комплексные защищенные испытания"],
+  ];
+
+  trunkModuleRoutes.forEach(([from, to, label]) => {
+    if (nodeMap.has(from) && nodeMap.has(to)) {
+      edges.push({
+        id: `route-${from}-${to}`,
+        from,
+        to,
+        type: "interdisciplinary",
+        label,
+      });
+    }
+  });
+
+  // 3. Trajectory entrance from M01 to its first topic
+  if (nodeMap.has("M01") && nodeMap.has("M01-T01")) {
     edges.push({
-      id: r.id || `rel-edge-${idx}`,
-      from: r.fromId,
-      to: r.toId,
-      type: (r.type as any) || 'prerequisite',
-      label: r.description,
+      id: "route-M01-to-T01",
+      from: "M01",
+      to: "M01-T01",
+      type: "interdisciplinary",
+      label: "Старт программы M01",
     });
+  }
+
+  // 4. Connect representative skills to their parent topics
+  representativeSkills.forEach((s) => {
+    if (s.topicId && nodeMap.has(s.topicId) && nodeMap.has(s.id)) {
+      edges.push({
+        id: `skill-edge-${s.topicId}-${s.id}`,
+        from: s.topicId,
+        to: s.id,
+        type: "prerequisite",
+        label: "Освоение навыка",
+      });
+    }
   });
 
   return { nodes, edges };

@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { BookOpen, Layers, ArrowRight, Search, CheckCircle2, Lock, Clock, Filter } from "lucide-react";
-import { getModules, subscribeToDatabase, getLessonAttemptsForUser, getCurrentUser } from "../services/storage";
+import { getModules, getLessons, getTopics, subscribeToDatabase, getLessonAttemptsForUser, getCurrentUser } from "../services/storage";
 import { ModuleItem } from "../types";
 
 interface CourseCatalogViewProps {
@@ -92,7 +92,8 @@ export const CourseCatalogView: React.FC<CourseCatalogViewProps> = ({ navigate }
       {/* Grid of 18 Modules */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredModules.map((module) => {
-          const badge = getStatusBadge(module.status);
+          const modLessons = getLessons({ moduleId: module.id, includeUnpublished: true });
+          const hasLessons = modLessons.length > 0;
           const isModule1 = module.code === "M01";
           const progressPercent = isModule1 ? Math.min(100, Math.round((attempts.length / 3) * 100)) : 0;
 
@@ -100,19 +101,33 @@ export const CourseCatalogView: React.FC<CourseCatalogViewProps> = ({ navigate }
             <div
               key={module.id}
               onClick={() => navigate(`/course/${module.id}`)}
-              className="group rounded-2xl border border-slate-800 bg-[#111B2E] p-5 shadow-xl hover:border-cyan-500/40 hover:shadow-cyan-500/10 cursor-pointer transition-all duration-200 flex flex-col justify-between"
+              className={`rounded-2xl border p-5 shadow-xl transition-all duration-200 flex flex-col justify-between cursor-pointer ${
+                hasLessons
+                  ? "border-cyan-500/40 bg-[#111B2E] hover:border-cyan-400 hover:shadow-cyan-500/10"
+                  : "border-slate-800/70 bg-slate-900/30 hover:border-slate-700 opacity-80 hover:opacity-100"
+              }`}
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/80">
+                  <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded border ${
+                    hasLessons
+                      ? "bg-cyan-950 text-cyan-400 border-cyan-800"
+                      : "bg-slate-800 text-slate-400 border-slate-700"
+                  }`}>
                     {module.code}
                   </span>
-                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded border uppercase font-medium ${badge.color}`}>
-                    {badge.label}
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded border uppercase font-medium ${
+                    hasLessons
+                      ? "bg-emerald-950 text-emerald-400 border-emerald-800"
+                      : "bg-slate-800/80 text-slate-400 border-slate-700"
+                  }`}>
+                    {hasLessons ? `Активен (${modLessons.length} ур.)` : "Проект паспорта"}
                   </span>
                 </div>
 
-                <h3 className="text-base font-bold text-slate-100 group-hover:text-cyan-300 transition-colors mt-3">
+                <h3 className={`text-base font-bold transition-colors mt-3 ${
+                  hasLessons ? "text-slate-100 hover:text-cyan-300" : "text-slate-300"
+                }`}>
                   {module.title}
                 </h3>
 
@@ -123,11 +138,11 @@ export const CourseCatalogView: React.FC<CourseCatalogViewProps> = ({ navigate }
 
               <div className="mt-5 pt-4 border-t border-slate-800/80">
                 <div className="flex items-center justify-between text-xs text-slate-400 font-mono mb-2">
-                  <span>Темы: {module.topicsCount}</span>
-                  <span>Опубл. уроков: {module.publishedLessonsCount}</span>
+                  <span>Темы: {getTopics(module.id).length || module.topicsCount}</span>
+                  <span>Уроков: {modLessons.length}</span>
                 </div>
 
-                {isModule1 && (
+                {isModule1 && attempts.length > 0 && (
                   <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden mb-3">
                     <div
                       className="bg-cyan-400 h-1.5 rounded-full transition-all duration-300"
@@ -142,8 +157,10 @@ export const CourseCatalogView: React.FC<CourseCatalogViewProps> = ({ navigate }
                       ? `Пререквизиты: ${module.prerequisites.join(", ")}`
                       : "Базовый модуль"}
                   </span>
-                  <span className="text-xs font-bold text-cyan-400 flex items-center space-x-1 group-hover:translate-x-1 transition-transform">
-                    <span>Открыть</span>
+                  <span className={`text-xs font-bold flex items-center space-x-1 ${
+                    hasLessons ? "text-cyan-400" : "text-slate-400"
+                  }`}>
+                    <span>{hasLessons ? "К урокам" : "Паспорт"}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </div>

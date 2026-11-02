@@ -17,6 +17,7 @@ import {
   Calendar,
   Sparkles,
   Zap,
+  Clock,
 } from "lucide-react";
 import {
   getCurrentUser,
@@ -92,19 +93,53 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
     return Math.round(sum / attempts.length);
   }, [attempts]);
 
-  // Activity points mock/real for chart
+  // Activity points calculated purely from real submitted attempts (per ТЗ v2.0)
   const activityData = useMemo(() => {
     const days = timeFilter === "7d" ? 7 : timeFilter === "30d" ? 14 : 20;
     return Array.from({ length: days }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - (days - 1 - i));
-      const hasEvent = i % 3 === 0 || i === days - 1;
+      const dayStr = `${d.getDate()}.${d.getMonth() + 1}`;
+
+      const count = attempts.filter((a) => {
+        if (!a.submittedAt) return false;
+        const subDate = new Date(a.submittedAt);
+        return (
+          subDate.getDate() === d.getDate() &&
+          subDate.getMonth() === d.getMonth() &&
+          subDate.getFullYear() === d.getFullYear()
+        );
+      }).length;
+
       return {
-        label: `${d.getDate()}.${d.getMonth() + 1}`,
-        count: hasEvent ? (i % 2 === 0 ? 2 : 1) : 0,
+        label: dayStr,
+        count,
       };
     });
-  }, [timeFilter]);
+  }, [timeFilter, attempts]);
+
+  // Mastered skills extracted dynamically from verified correct assessment questions
+  const masteredSkills = useMemo(() => {
+    const skillsMap = new Map<string, { code: string; title: string; date: string }>();
+    attempts.forEach((a) => {
+      if (a.assessment?.questions) {
+        a.assessment.questions.forEach((q) => {
+          if (q.result === "correct" && Array.isArray(q.skillIds)) {
+            q.skillIds.forEach((sid) => {
+              if (!skillsMap.has(sid)) {
+                skillsMap.set(sid, {
+                  code: sid,
+                  title: `Освоенный навык ${sid}`,
+                  date: a.submittedAt ? new Date(a.submittedAt).toLocaleDateString("ru-RU") : "Ранее",
+                });
+              }
+            });
+          }
+        });
+      }
+    });
+    return Array.from(skillsMap.values());
+  }, [attempts]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-200">
@@ -313,29 +348,41 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
             </div>
           </div>
 
-          {/* SVG Bar Chart */}
-          <div className="mt-6 h-48 flex items-end justify-between gap-1.5 sm:gap-2">
-            {activityData.map((item, idx) => {
-              const heightPercent = item.count > 0 ? Math.min(100, item.count * 45) : 8;
-              return (
-                <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
-                  <div className="w-full flex justify-center items-end h-36">
-                    <div
-                      className={`w-full max-w-[20px] rounded-t-md transition-all duration-300 ${
-                        item.count > 0
-                          ? "bg-gradient-to-t from-cyan-600 to-cyan-400 shadow-md shadow-cyan-500/20"
-                          : "bg-slate-800/40"
-                      }`}
-                      style={{ height: `${heightPercent}%` }}
-                    />
+          {/* SVG Bar Chart / Honest Empty State */}
+          {attempts.length === 0 ? (
+            <div className="mt-6 h-48 rounded-xl border border-dashed border-slate-800 bg-slate-900/30 flex flex-col items-center justify-center text-center p-4">
+              <Clock className="w-7 h-7 text-slate-500 mb-2" />
+              <p className="text-xs font-semibold text-slate-300">
+                Нет зарегистрированных событий активности
+              </p>
+              <p className="text-[11px] text-slate-500 max-w-sm mt-1">
+                График формируется строго по факту загрузки подтверждённых отчётов. Выполните первое занятие в ChatGPT и внесите отчёт.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-6 h-48 flex items-end justify-between gap-1.5 sm:gap-2">
+              {activityData.map((item, idx) => {
+                const heightPercent = item.count > 0 ? Math.min(100, item.count * 45) : 8;
+                return (
+                  <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
+                    <div className="w-full flex justify-center items-end h-36">
+                      <div
+                        className={`w-full max-w-[20px] rounded-t-md transition-all duration-300 ${
+                          item.count > 0
+                            ? "bg-gradient-to-t from-cyan-600 to-cyan-400 shadow-md shadow-cyan-500/20"
+                            : "bg-slate-800/40"
+                        }`}
+                        style={{ height: `${heightPercent}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono scale-90">
+                      {item.label}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-mono scale-90">
-                    {item.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Next Goal Card */}
@@ -391,20 +438,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
               <span>Хорошо освоено</span>
             </h3>
             <span className="text-xs text-slate-400 font-mono">
-              {attempts.length > 0 ? "На основе отчётов" : "Пока нет данных"}
+              {masteredSkills.length > 0 ? `${masteredSkills.length} подтверждено` : "Пока нет данных"}
             </span>
           </div>
 
           <div className="mt-4 space-y-2.5">
-            {attempts.length === 0 ? (
+            {masteredSkills.length === 0 ? (
               <div className="p-4 text-center text-xs text-slate-400 bg-slate-900/50 rounded-xl">
                 Пройдите первое занятие в ChatGPT и загрузите отчёт, чтобы зафиксировать подтверждённые навыки.
               </div>
             ) : (
-              [
-                { code: "SKILL-M01-01", title: "Различие данных и информации", date: "Сегодня" },
-                { code: "SKILL-M01-02", title: "Модель передачи связи Клода Шеннона", date: "Сегодня" },
-              ].map((item, idx) => (
+              masteredSkills.map((item, idx) => (
                 <div
                   key={idx}
                   className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between text-xs"

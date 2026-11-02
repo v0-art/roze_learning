@@ -108,6 +108,27 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
   const [bumpMinor, setBumpMinor] = useState(false);
   const [bumpMajor, setBumpMajor] = useState(false);
 
+  // Modals for manual creation
+  const [showNewModuleModal, setShowNewModuleModal] = useState(false);
+  const [showNewTopicModal, setShowNewTopicModal] = useState(false);
+  const [showNewLessonModal, setShowNewLessonModal] = useState(false);
+  const [newTopicModuleId, setNewTopicModuleId] = useState('M01');
+  const [newLessonTopicId, setNewLessonTopicId] = useState('M01-T01');
+
+  // Form states
+  const [newModuleCode, setNewModuleCode] = useState('');
+  const [newModuleTitle, setNewModuleTitle] = useState('');
+  const [newModuleDesc, setNewModuleDesc] = useState('');
+
+  const [newTopicCode, setNewTopicCode] = useState('');
+  const [newTopicTitle, setNewTopicTitle] = useState('');
+  const [newTopicObjectives, setNewTopicObjectives] = useState('');
+
+  const [newLessonCode, setNewLessonCode] = useState('');
+  const [newLessonTitle, setNewLessonTitle] = useState('');
+  const [newLessonDuration, setNewLessonDuration] = useState(120);
+  const [newLessonPrompt, setNewLessonPrompt] = useState('');
+
   // Modals
   const [showImportModal, setShowImportModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -122,6 +143,19 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
   const [importSuccess, setImportSuccess] = useState(false);
   const [conflictMode, setConflictMode] = useState<'skip_unchanged_update_changed' | 'keep_existing' | 'overwrite_all'>('skip_unchanged_update_changed');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lessonFileInputRef = useRef<HTMLInputElement>(null);
+  const [localImportNotice, setLocalImportNotice] = useState<string | null>(null);
+
+  const handleLessonFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeLesson) return;
+    const text = await file.text();
+    setEditorText(text);
+    setEditorChangelog(`Импорт контента из файла ${file.name}`);
+    setLocalImportNotice(`Контент из ${file.name} загружен в редактор урока ${activeLesson.code}. Сохраните изменения.`);
+    setTimeout(() => setLocalImportNotice(null), 5000);
+    e.target.value = '';
+  };
 
   // Subscribe to DB changes
   useEffect(() => {
@@ -259,6 +293,12 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
         // Individual lesson or exam
         const parsedLesson = parseLessonIdFromFilenameOrContent(file.name, text);
         if (parsedLesson) {
+          const existingLesson = db.lessons.find(
+            (l) => l.code === parsedLesson.lessonCode || l.id === parsedLesson.lessonCode
+          );
+          const headingMatch = text.match(/#\s*(?:УЧЕБНЫЙ ПРОМПТ\s+)?(?:[A-Z0-9_-]+\s*[-—:]\s*)?([^\n\r]+)/i);
+          const detectedTitle = headingMatch ? headingMatch[1].replace(/^[—–\-:\s]+/, '').trim() : '';
+
           payload = {
             lessons: [
               {
@@ -267,13 +307,13 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
                 moduleId: parsedLesson.moduleId,
                 topicId: parsedLesson.topicId,
                 order: parseInt(parsedLesson.lessonCode.slice(-2), 10) || 1,
-                title: parsedLesson.lessonCode,
-                durationEstimateMinutes: 120,
-                prerequisites: [],
-                objectives: [],
-                relatedSkillIds: [],
-                status: 'draft',
-                version: '1.0',
+                title: detectedTitle || existingLesson?.title || parsedLesson.lessonCode,
+                durationEstimateMinutes: existingLesson?.durationEstimateMinutes || 120,
+                prerequisites: existingLesson?.prerequisites || [],
+                objectives: existingLesson?.objectives || [],
+                relatedSkillIds: existingLesson?.relatedSkillIds || [],
+                status: existingLesson?.status || 'draft',
+                version: existingLesson?.version || '1.0',
                 promptTemplate: text,
               },
             ],
@@ -377,6 +417,111 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
     }, 1500);
   };
 
+  const handleCreateModule = () => {
+    if (!newModuleCode.trim() || !newModuleTitle.trim()) {
+      alert('Пожалуйста, укажите код и название дисциплины.');
+      return;
+    }
+    const cleanCode = newModuleCode.trim().toUpperCase();
+    const newMod: ModuleItem = {
+      id: cleanCode,
+      code: cleanCode,
+      title: newModuleTitle.trim(),
+      description: newModuleDesc.trim() || 'Описание дисциплины',
+      order: modules.length + 1,
+      status: 'draft',
+      learningObjectives: [],
+      prerequisites: [],
+      totalEstimatedHours: 40,
+    };
+    saveModule(newMod);
+    setShowNewModuleModal(false);
+    setNewModuleCode('');
+    setNewModuleTitle('');
+    setNewModuleDesc('');
+    setSelectedType('module');
+    setSelectedId(cleanCode);
+  };
+
+  const handleCreateTopic = () => {
+    if (!newTopicCode.trim() || !newTopicTitle.trim()) {
+      alert('Пожалуйста, укажите код и название темы.');
+      return;
+    }
+    const cleanCode = newTopicCode.trim().toUpperCase();
+    const objectivesList = newTopicObjectives
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const newTop: TopicItem = {
+      id: cleanCode,
+      code: cleanCode,
+      moduleId: newTopicModuleId,
+      title: newTopicTitle.trim(),
+      order: topics.filter((t) => t.moduleId === newTopicModuleId).length + 1,
+      status: 'draft',
+      learningObjectives: objectivesList.length > 0 ? objectivesList : ['Освоение темы ' + cleanCode],
+    };
+    saveTopic(newTop);
+    setShowNewTopicModal(false);
+    setNewTopicCode('');
+    setNewTopicTitle('');
+    setNewTopicObjectives('');
+    setSelectedType('topic');
+    setSelectedId(cleanCode);
+  };
+
+  const handleCreateLesson = () => {
+    if (!newLessonCode.trim() || !newLessonTitle.trim()) {
+      alert('Пожалуйста, укажите код и название урока.');
+      return;
+    }
+    const cleanCode = newLessonCode.trim().toUpperCase();
+    const parentTopic = topics.find((t) => t.id === newLessonTopicId);
+    const parentModuleId = parentTopic?.moduleId || 'M01';
+
+    const defaultPrompt = newLessonPrompt.trim() || `# УЧЕБНЫЙ ПРОМПТ ${cleanCode}
+
+**Модуль:** ${parentModuleId}  
+**Тема:** ${newLessonTopicId}  
+**Урок:** ${cleanCode} — ${newLessonTitle.trim()}  
+
+## 1. Роль и цели занятия
+Вы выступаете в роли преподавателя платформы NEXUS Academy. Проведите занятие с курсантом по теме: ${newLessonTitle.trim()}.
+
+## 2. Контрольные вопросы
+1. Контрольный вопрос 1 по теме ${cleanCode}
+2. Контрольный вопрос 2 по теме ${cleanCode}
+
+## 3. Домашнее задание
+1. Задание 1: самостоятельный разбор темы
+`;
+
+    const newLes: LessonItem = {
+      id: cleanCode,
+      code: cleanCode,
+      moduleId: parentModuleId,
+      topicId: newLessonTopicId,
+      title: newLessonTitle.trim(),
+      order: lessons.filter((l) => l.topicId === newLessonTopicId).length + 1,
+      version: '1.0',
+      status: 'draft',
+      durationEstimateMinutes: Number(newLessonDuration) || 120,
+      objectives: [newLessonTitle.trim()],
+      promptTemplate: defaultPrompt,
+      relatedSkillIds: [],
+    };
+
+    saveLesson(newLes, 'Первичное создание урока в CMS', false);
+    setShowNewLessonModal(false);
+    setNewLessonCode('');
+    setNewLessonTitle('');
+    setNewLessonPrompt('');
+    setSelectedType('lesson');
+    setSelectedId(cleanCode);
+  };
+
   return (
     <div className={`p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 ${isFullscreen ? 'fixed inset-0 z-50 bg-[#090F1C] overflow-y-auto max-w-none' : ''}`}>
       {/* Top Header Bar */}
@@ -478,6 +623,58 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Quick Create Buttons: + Модуль, + Тема, + Урок */}
+          <div className="grid grid-cols-3 gap-1.5 pt-1">
+            <button
+              onClick={() => {
+                setNewModuleCode(`M${String(modules.length + 1).padStart(2, '0')}`);
+                setNewModuleTitle('');
+                setNewModuleDesc('');
+                setShowNewModuleModal(true);
+              }}
+              className="py-1.5 px-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[11px] font-bold flex items-center justify-center space-x-1 transition-all active:scale-95"
+              title="Создать новый модуль курса"
+            >
+              <Plus className="w-3 h-3" />
+              <span>+ Модуль</span>
+            </button>
+
+            <button
+              onClick={() => {
+                const targetMod = selectedType === 'module' ? selectedId : 'M01';
+                setNewTopicModuleId(targetMod);
+                const nextNum = topics.filter((t) => t.moduleId === targetMod).length + 1;
+                setNewTopicCode(`${targetMod}-T${String(nextNum).padStart(2, '0')}`);
+                setNewTopicTitle('');
+                setNewTopicObjectives('');
+                setShowNewTopicModal(true);
+              }}
+              className="py-1.5 px-2 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold flex items-center justify-center space-x-1 transition-all active:scale-95"
+              title="Создать новую тему в выбранной дисциплине"
+            >
+              <Plus className="w-3 h-3" />
+              <span>+ Тема</span>
+            </button>
+
+            <button
+              onClick={() => {
+                const targetTop = selectedType === 'topic' ? selectedId : topics[0]?.id || 'M01-T01';
+                setNewLessonTopicId(targetTop);
+                const nextNum = lessons.filter((l) => l.topicId === targetTop).length + 1;
+                setNewLessonCode(`${targetTop}-U${String(nextNum).padStart(2, '0')}`);
+                setNewLessonTitle('');
+                setNewLessonDuration(120);
+                setNewLessonPrompt('');
+                setShowNewLessonModal(true);
+              }}
+              className="py-1.5 px-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold flex items-center justify-center space-x-1 transition-all active:scale-95"
+              title="Создать новый урок в выбранной теме"
+            >
+              <Plus className="w-3 h-3" />
+              <span>+ Урок</span>
+            </button>
           </div>
 
           {/* Batch Actions Toolbar (Section 15) */}
@@ -716,6 +913,23 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
 
                 {/* Quick Actions */}
                 <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                  <input
+                    ref={lessonFileInputRef}
+                    type="file"
+                    accept=".md,.txt"
+                    className="hidden"
+                    onChange={handleLessonFilePick}
+                  />
+
+                  <button
+                    onClick={() => lessonFileInputRef.current?.click()}
+                    className="p-2 rounded-lg border border-cyan-700/80 bg-cyan-950/40 hover:bg-cyan-900/50 text-cyan-300 text-xs flex items-center space-x-1.5 transition-colors font-semibold"
+                    title="Загрузить текст из любого локального .md файла прямо в этот урок"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Загрузить .md в урок</span>
+                  </button>
+
                   <button
                     onClick={() => setShowHistoryModal(true)}
                     className="p-2 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs flex items-center space-x-1"
@@ -743,6 +957,13 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
                   </button>
                 </div>
               </div>
+
+              {localImportNotice && (
+                <div className="p-3 rounded-xl bg-cyan-950/60 border border-cyan-800/80 text-cyan-300 text-xs flex items-center space-x-2 animate-in fade-in">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-cyan-400" />
+                  <span>{localImportNotice}</span>
+                </div>
+              )}
 
               {/* Editor Mode Tabs & Stats */}
               <div className="flex items-center justify-between text-xs text-slate-400">
@@ -920,7 +1141,24 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
               </div>
 
               <div className="pt-3 border-t border-slate-800">
-                <h4 className="text-xs font-bold text-slate-200 mb-2">Уроки темы ({lessons.filter((l) => l.topicId === activeTopic.id).length}):</h4>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-bold text-slate-200">Уроки темы ({lessons.filter((l) => l.topicId === activeTopic.id).length}):</h4>
+                  <button
+                    onClick={() => {
+                      setNewLessonTopicId(activeTopic.id);
+                      const nextNum = lessons.filter((l) => l.topicId === activeTopic.id).length + 1;
+                      setNewLessonCode(`${activeTopic.code}-U${String(nextNum).padStart(2, '0')}`);
+                      setNewLessonTitle('');
+                      setNewLessonDuration(120);
+                      setNewLessonPrompt('');
+                      setShowNewLessonModal(true);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold flex items-center space-x-1 transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>+ Добавить урок</span>
+                  </button>
+                </div>
                 <div className="space-y-1 font-mono text-xs">
                   {lessons.filter((l) => l.topicId === activeTopic.id).map((l) => (
                     <div
@@ -959,7 +1197,25 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
               </div>
 
               <div className="pt-3 border-t border-slate-800">
-                <h4 className="text-xs font-bold text-slate-200 mb-2">Утверждённые темы ({topics.filter((t) => t.moduleId === activeModule?.id).length}):</h4>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-bold text-slate-200">Утверждённые темы ({topics.filter((t) => t.moduleId === activeModule?.id).length}):</h4>
+                  {activeModule && (
+                    <button
+                      onClick={() => {
+                        setNewTopicModuleId(activeModule.id);
+                        const nextNum = topics.filter((t) => t.moduleId === activeModule.id).length + 1;
+                        setNewTopicCode(`${activeModule.code}-T${String(nextNum).padStart(2, '0')}`);
+                        setNewTopicTitle('');
+                        setNewTopicObjectives('');
+                        setShowNewTopicModal(true);
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold flex items-center space-x-1 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>+ Добавить тему</span>
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-1 font-mono text-xs">
                   {topics.filter((t) => t.moduleId === activeModule?.id).map((t) => (
                     <div
@@ -1032,6 +1288,28 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
                   }
                 }}
               />
+            </div>
+
+            {/* Format Reference Guide */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-[11px] pt-1">
+              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                <span className="font-bold text-cyan-400 block font-mono">1. Одиночный урок (.md)</span>
+                <p className="text-slate-400">
+                  Имя файла: <code className="text-slate-200 bg-slate-950 px-1 py-0.5 rounded">M01-T07-U07.md</code> или первая строка <code className="text-slate-200 bg-slate-950 px-1 py-0.5 rounded"># УЧЕБНЫЙ ПРОМПТ M01-T07-U07</code>. Обновляет только целевой урок, сохраняя историю версий.
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                <span className="font-bold text-indigo-400 block font-mono">2. Экзаменационный банк (.md)</span>
+                <p className="text-slate-400">
+                  Имя содержит <code className="text-slate-200 bg-slate-950 px-1 py-0.5 rounded">EX01</code> или <code className="text-slate-200 bg-slate-950 px-1 py-0.5 rounded">ticket</code>, с блоками <code className="text-slate-200 bg-slate-950 px-1 py-0.5 rounded">## Билет ... Теория 1 ... Практика</code>.
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                <span className="font-bold text-emerald-400 block font-mono">3. Манифест курса (.json)</span>
+                <p className="text-slate-400">
+                  JSON-файл со структурой <code className="text-slate-200 bg-slate-950 px-1 py-0.5 rounded">&#123; modules, topics, lessons, skills &#125;</code> для массового обновления всей программы.
+                </p>
+              </div>
             </div>
 
             {importAnalyzing && (
@@ -1254,6 +1532,268 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
                 className="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 text-xs font-medium"
               >
                 Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL: CREATE MODULE ----------------- */}
+      {showNewModuleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-[#111B2E] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center space-x-2">
+                <Plus className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-base font-bold text-slate-100">Добавить новую дисциплину</h3>
+              </div>
+              <button onClick={() => setShowNewModuleModal(false)} className="text-slate-400 hover:text-slate-200">
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Код дисциплины (например: M19, M20)</label>
+                <input
+                  type="text"
+                  value={newModuleCode}
+                  onChange={(e) => setNewModuleCode(e.target.value.toUpperCase())}
+                  placeholder="M19"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-800 bg-slate-950 font-mono text-cyan-400 text-sm focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Название дисциплины</label>
+                <input
+                  type="text"
+                  value={newModuleTitle}
+                  onChange={(e) => setNewModuleTitle(e.target.value)}
+                  placeholder="Введение в квантовые коммуникации"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 text-sm focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Краткое описание / Паспорт дисциплины</label>
+                <textarea
+                  rows={3}
+                  value={newModuleDesc}
+                  onChange={(e) => setNewModuleDesc(e.target.value)}
+                  placeholder="Краткое описание дисциплины и фундаментальных целей обучения..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-800 bg-slate-950 text-slate-300 text-xs focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+              <button
+                onClick={() => setShowNewModuleModal(false)}
+                className="px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 text-xs font-medium hover:bg-slate-700"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleCreateModule}
+                className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all shadow-md shadow-cyan-500/20"
+              >
+                Создать дисциплину
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL: CREATE TOPIC ----------------- */}
+      {showNewTopicModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-[#111B2E] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center space-x-2">
+                <Plus className="w-5 h-5 text-indigo-400" />
+                <h3 className="text-base font-bold text-slate-100">Добавить новую тему</h3>
+              </div>
+              <button onClick={() => setShowNewTopicModal(false)} className="text-slate-400 hover:text-slate-200">
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Родительская дисциплина</label>
+                <select
+                  value={newTopicModuleId}
+                  onChange={(e) => {
+                    const mId = e.target.value;
+                    setNewTopicModuleId(mId);
+                    const nextNum = topics.filter((t) => t.moduleId === mId).length + 1;
+                    setNewTopicCode(`${mId}-T${String(nextNum).padStart(2, '0')}`);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-800 bg-slate-950 text-slate-200 text-xs focus:outline-none focus:border-indigo-500 font-mono"
+                >
+                  {modules.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.code} — {m.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Код темы (например: M01-T09)</label>
+                <input
+                  type="text"
+                  value={newTopicCode}
+                  onChange={(e) => setNewTopicCode(e.target.value.toUpperCase())}
+                  placeholder="M01-T09"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-800 bg-slate-950 font-mono text-indigo-400 text-sm focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Название темы</label>
+                <input
+                  type="text"
+                  value={newTopicTitle}
+                  onChange={(e) => setNewTopicTitle(e.target.value)}
+                  placeholder="Теория кодирования и сжатия информации"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 text-sm focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Цели обучения темы (построчно)</label>
+                <textarea
+                  rows={3}
+                  value={newTopicObjectives}
+                  onChange={(e) => setNewTopicObjectives(e.target.value)}
+                  placeholder="Освоение энтропии Шеннона&#10;Понимание алгоритмов Хаффмана и LZW&#10;Практический расчёт избыточности кода"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-800 bg-slate-950 text-slate-300 text-xs focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+              <button
+                onClick={() => setShowNewTopicModal(false)}
+                className="px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 text-xs font-medium hover:bg-slate-700"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleCreateTopic}
+                className="px-5 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold transition-all shadow-md shadow-indigo-500/20"
+              >
+                Создать тему
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL: CREATE LESSON ----------------- */}
+      {showNewLessonModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-[#111B2E] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center space-x-2">
+                <Plus className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-base font-bold text-slate-100">Добавить новый урок</h3>
+              </div>
+              <button onClick={() => setShowNewLessonModal(false)} className="text-slate-400 hover:text-slate-200">
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Родительская тема</label>
+                <select
+                  value={newLessonTopicId}
+                  onChange={(e) => {
+                    const tId = e.target.value;
+                    setNewLessonTopicId(tId);
+                    const nextNum = lessons.filter((l) => l.topicId === tId).length + 1;
+                    setNewLessonCode(`${tId}-U${String(nextNum).padStart(2, '0')}`);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-800 bg-slate-950 text-slate-200 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                >
+                  {topics.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      [{t.moduleId}] {t.code}: {t.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Код урока (например: M01-T01-U03)</label>
+                  <input
+                    type="text"
+                    value={newLessonCode}
+                    onChange={(e) => setNewLessonCode(e.target.value.toUpperCase())}
+                    placeholder="M01-T01-U03"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-800 bg-slate-950 font-mono text-emerald-400 text-sm focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Хронометраж (минут)</label>
+                  <input
+                    type="number"
+                    value={newLessonDuration}
+                    onChange={(e) => setNewLessonDuration(Number(e.target.value) || 120)}
+                    min={15}
+                    max={360}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-800 bg-slate-950 font-mono text-slate-200 text-sm focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Название урока</label>
+                <input
+                  type="text"
+                  value={newLessonTitle}
+                  onChange={(e) => setNewLessonTitle(e.target.value)}
+                  placeholder="Преобразование Фурье и гармонический анализ дискретных сигналов"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 text-sm focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-slate-300 font-semibold">
+                    Учебный промпт для ChatGPT (Markdown)
+                  </label>
+                  <span className="text-[10px] text-slate-500">
+                    Оставьте пустым для автогенерации по стандарту NEXUS
+                  </span>
+                </div>
+                <textarea
+                  rows={6}
+                  value={newLessonPrompt}
+                  onChange={(e) => setNewLessonPrompt(e.target.value)}
+                  placeholder="# УЧЕБНЫЙ ПРОМПТ...&#10;Оставьте пустым, чтобы автоматически создать структуру занятия с входным контролем и ДЗ"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-800 bg-slate-950 text-slate-300 font-mono text-xs focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+              <button
+                onClick={() => setShowNewLessonModal(false)}
+                className="px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 text-xs font-medium hover:bg-slate-700"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleCreateLesson}
+                className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all shadow-md shadow-emerald-500/20"
+              >
+                Создать урок
               </button>
             </div>
           </div>

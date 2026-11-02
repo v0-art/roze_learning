@@ -155,7 +155,7 @@ export const AdminReportsView: React.FC = () => {
                     {selectedAttempt.score} / {selectedAttempt.maxScore}
                   </span>
                   <span className="text-[11px] text-slate-400 font-mono">
-                    {selectedAttempt.mentorConfirmed ? "Утверждено ментором" : "Заявлено студентом"}
+                    {selectedAttempt.mentorConfirmed ? "Верифицировано ментором" : "Отчёт ИИ-преподавателя"}
                   </span>
                 </div>
               </div>

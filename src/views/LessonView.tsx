@@ -71,8 +71,18 @@ export const LessonView: React.FC<LessonViewProps> = ({ lessonId, navigate }) =>
     return unsub;
   }, [lessonId]);
 
-  // Find previous lesson report for carryover
-  const prevLessonCode = lesson?.code === "M01-T01-U02" ? "M01-T01-U01" : lesson?.code === "M01-T01-U03" ? "M01-T01-U02" : null;
+  // Find previous lesson report for carryover (e.g. U02 -> U01, U03 -> U02)
+  const prevLessonCode = useMemo(() => {
+    if (!lesson?.code) return null;
+    const match = lesson.code.match(/^(.*-U)(\d+)$/);
+    if (!match) return null;
+    const prefix = match[1];
+    const num = parseInt(match[2], 10);
+    if (num <= 1) return null;
+    const prevNumStr = String(num - 1).padStart(match[2].length, "0");
+    return `${prefix}${prevNumStr}`;
+  }, [lesson?.code]);
+
   const prevAttempt = useMemo(() => {
     if (!prevLessonCode) return null;
     return allUserAttempts.find((a) => a.lessonId === prevLessonCode) || null;
@@ -86,7 +96,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ lessonId, navigate }) =>
       previousLessonReport: prevAttempt?.structuredReport || null,
       previousLessonId: prevLessonCode,
       unresolvedGaps: gaps.filter((g) => g.status === "needs-review"),
-      pendingHomework: homework.filter((h) => h.status === "assigned"),
+      pendingHomework: homework.filter((h) => h.lessonId === prevLessonCode || h.status === "assigned" || h.status === "submitted"),
     });
   }, [lesson, prevAttempt, prevLessonCode, gaps, homework]);
 
@@ -304,7 +314,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ lessonId, navigate }) =>
                           : "bg-amber-950 text-amber-400 border border-amber-800"
                       }`}
                     >
-                      {att.mentorConfirmed ? "Подтверждено ментором" : "Заявлено студентом"}
+                      {att.mentorConfirmed ? "Верифицировано ментором" : "Отчёт ИИ-преподавателя"}
                     </span>
                   </div>
                 </div>

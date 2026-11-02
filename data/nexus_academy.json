@@ -4253,10 +4253,87 @@
   ],
   "lessonAttempts": [],
   "knowledgeGaps": [],
-  "homework": [],
+  "homework": [
+    {
+      "id": "M01-T01-U01-HW01",
+      "lessonId": "M01-T01-U01",
+      "title": "SMS «Встреча в 18:00»",
+      "description": "Разберите SMS «Встреча в 18:00»: укажите содержание сообщения, данные и форму их представления, отправителя и получателя; объясните возможную неоднозначность. Каждый вывод обоснуйте.",
+      "status": "submitted",
+      "assignedAt": "2026-10-27T08:00:00.000Z",
+      "studentAnswer": "Содержание: время и факт встречи. Данные: текстовая строка ASCII/UTF-8. Отправитель: инициатор встречи. Неоднозначность: часовой пояс и место встречи не указаны явно.",
+      "submittedAt": "2026-10-30T10:07:51.722Z"
+    },
+    {
+      "id": "M01-T01-U01-HW02",
+      "lessonId": "M01-T01-U01",
+      "title": "Сохранение фотографии",
+      "description": "Разберите сохранение фотографии: какие сведения может содержать изображение, какими данными они представлены, какова роль пользователя и компьютера и обязательно ли сохранение файла означает передачу сообщения другому человеку. Каждый вывод обоснуйте.",
+      "status": "assigned",
+      "assignedAt": "2026-10-27T08:00:00.000Z"
+    },
+    {
+      "id": "M01-T01-U01-HW03",
+      "lessonId": "M01-T01-U01",
+      "title": "Дисплей «25»",
+      "description": "На примере дисплея с записью «25» объясните возможные значения записи, роль контекста и единиц измерения, отличие представления данных от их интерпретации. Приведите не менее двух возможных трактовок.",
+      "status": "assigned",
+      "assignedAt": "2026-10-27T08:00:00.000Z"
+    },
+    {
+      "id": "M01-T01-U01-HW04",
+      "lessonId": "M01-T01-U01",
+      "title": "Терминология",
+      "description": "Своими словами объясните информацию, данные, сообщение, представление информации, кодирование и интерпретацию. Для каждого понятия приведите собственный пример, не повторяющий примеры лекции.",
+      "status": "assigned",
+      "assignedAt": "2026-10-27T08:00:00.000Z"
+    }
+  ],
   "assessments": [],
-  "notifications": [],
+  "notifications": [
+    {
+      "id": "notif-hw-1793354871722-pu37",
+      "eventType": "homework_submitted",
+      "title": "Сдано решение задания: SMS «Встреча в 18:00»",
+      "description": "Курсант Алексей Смирнов отправил решение задания M01-T01-U01-HW01 (M01-T01-U01).",
+      "studentId": "student-alexey",
+      "studentName": "Алексей Смирнов",
+      "relatedEntityId": "M01-T01-U01-HW01",
+      "status": "unread",
+      "createdAt": "2026-10-30T10:07:51.722Z"
+    }
+  ],
   "auditLogs": [
+    {
+      "id": "audit-1793354871722",
+      "actorId": "student-alexey",
+      "actorName": "Алексей Смирнов",
+      "action": "SUBMIT_HOMEWORK",
+      "targetType": "HOMEWORK",
+      "targetId": "M01-T01-U01-HW01",
+      "reason": "Сдача решения по заданию M01-T01-U01-HW01",
+      "timestamp": "2026-10-30T10:07:51.722Z"
+    },
+    {
+      "id": "audit-1793254982297",
+      "actorId": "admin-mentor",
+      "actorName": "Дмитрий Волков (Главный ментор)",
+      "action": "VERIFY_HOMEWORK",
+      "targetType": "HOMEWORK",
+      "targetId": "M01-T01-U01-HW01",
+      "reason": "Рецензия ментора Дмитрий Волков (Главный ментор) на задание M01-T01-U01-HW01: статус verified.",
+      "timestamp": "2026-10-29T06:23:02.297Z"
+    },
+    {
+      "id": "audit-1793254945716",
+      "actorId": "admin-mentor",
+      "actorName": "Дмитрий Волков (Главный ментор)",
+      "action": "SUBMIT_HOMEWORK",
+      "targetType": "HOMEWORK",
+      "targetId": "M01-T01-U01-HW01",
+      "reason": "Сдача решения по заданию M01-T01-U01-HW01",
+      "timestamp": "2026-10-29T06:22:25.716Z"
+    },
     {
       "id": "audit-init",
       "actorId": "admin-mentor",
@@ -4277,8 +4354,8 @@
       "description": "Дисциплина M01 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M01",
-      "x": 120,
-      "y": 150,
+      "x": 80,
+      "y": 90,
       "prerequisites": [],
       "futureApplications": [
         "M02",
@@ -4296,8 +4373,8 @@
       "description": "Дисциплина M02 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M02",
-      "x": 320,
-      "y": 150,
+      "x": 400,
+      "y": 90,
       "prerequisites": [
         "M01"
       ],
@@ -4311,8 +4388,8 @@
       "description": "Дисциплина M03 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M03",
-      "x": 520,
-      "y": 150,
+      "x": 720,
+      "y": 90,
       "prerequisites": [
         "M01"
       ],
@@ -4326,8 +4403,8 @@
       "description": "Дисциплина M04 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M04",
-      "x": 720,
-      "y": 150,
+      "x": 1040,
+      "y": 90,
       "prerequisites": [
         "M01"
       ],
@@ -4341,8 +4418,8 @@
       "description": "Дисциплина M05 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M05",
-      "x": 920,
-      "y": 150,
+      "x": 1360,
+      "y": 90,
       "prerequisites": [
         "M01"
       ],
@@ -4356,8 +4433,8 @@
       "description": "Дисциплина M06 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M06",
-      "x": 1120,
-      "y": 150,
+      "x": 1680,
+      "y": 90,
       "prerequisites": [
         "M01"
       ],
@@ -4371,8 +4448,8 @@
       "description": "Дисциплина M07 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M07",
-      "x": 120,
-      "y": 350,
+      "x": 80,
+      "y": 320,
       "prerequisites": [
         "M01"
       ],
@@ -4386,8 +4463,8 @@
       "description": "Дисциплина M08 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M08",
-      "x": 320,
-      "y": 350,
+      "x": 400,
+      "y": 320,
       "prerequisites": [
         "M01"
       ],
@@ -4401,8 +4478,8 @@
       "description": "Дисциплина M09 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M09",
-      "x": 520,
-      "y": 350,
+      "x": 720,
+      "y": 320,
       "prerequisites": [
         "M01"
       ],
@@ -4416,8 +4493,8 @@
       "description": "Дисциплина M10 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M10",
-      "x": 720,
-      "y": 350,
+      "x": 1040,
+      "y": 320,
       "prerequisites": [
         "M01"
       ],
@@ -4431,8 +4508,8 @@
       "description": "Дисциплина M11 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M11",
-      "x": 920,
-      "y": 350,
+      "x": 1360,
+      "y": 320,
       "prerequisites": [
         "M01"
       ],
@@ -4446,8 +4523,8 @@
       "description": "Дисциплина M12 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M12",
-      "x": 1120,
-      "y": 350,
+      "x": 1680,
+      "y": 320,
       "prerequisites": [
         "M01"
       ],
@@ -4461,7 +4538,7 @@
       "description": "Дисциплина M13 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M13",
-      "x": 120,
+      "x": 80,
       "y": 550,
       "prerequisites": [
         "M01"
@@ -4476,7 +4553,7 @@
       "description": "Дисциплина M14 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M14",
-      "x": 320,
+      "x": 400,
       "y": 550,
       "prerequisites": [
         "M01"
@@ -4491,7 +4568,7 @@
       "description": "Дисциплина M15 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M15",
-      "x": 520,
+      "x": 720,
       "y": 550,
       "prerequisites": [
         "M01"
@@ -4506,7 +4583,7 @@
       "description": "Дисциплина M16 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M16",
-      "x": 720,
+      "x": 1040,
       "y": 550,
       "prerequisites": [
         "M01"
@@ -4521,7 +4598,7 @@
       "description": "Дисциплина M17 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M17",
-      "x": 920,
+      "x": 1360,
       "y": 550,
       "prerequisites": [
         "M01"
@@ -4536,13 +4613,125 @@
       "description": "Дисциплина M18 программы подготовки NEXUS Academy",
       "level": 1,
       "moduleId": "M18",
-      "x": 1120,
+      "x": 1680,
       "y": 550,
       "prerequisites": [
         "M01"
       ],
       "futureApplications": [],
       "status": "locked"
+    },
+    {
+      "id": "M01-T01",
+      "code": "M01-T01",
+      "title": "Информация, данные, сообщение и сигнал",
+      "description": "Утверждённая тема M01-T01: Информация, данные, сообщение и сигнал",
+      "level": 2,
+      "moduleId": "M01",
+      "topicId": "M01-T01",
+      "x": 100,
+      "y": 820,
+      "prerequisites": [],
+      "futureApplications": [],
+      "status": "studied"
+    },
+    {
+      "id": "M01-T02",
+      "code": "M01-T02",
+      "title": "Единицы информации и информационные объёмы",
+      "description": "Утверждённая тема M01-T02: Единицы информации и информационные объёмы",
+      "level": 2,
+      "moduleId": "M01",
+      "topicId": "M01-T02",
+      "x": 560,
+      "y": 820,
+      "prerequisites": [],
+      "futureApplications": [],
+      "status": "studied"
+    },
+    {
+      "id": "M01-T03",
+      "code": "M01-T03",
+      "title": "Системы счисления и двоичная арифметика",
+      "description": "Утверждённая тема M01-T03: Системы счисления и двоичная арифметика",
+      "level": 2,
+      "moduleId": "M01",
+      "topicId": "M01-T03",
+      "x": 1020,
+      "y": 820,
+      "prerequisites": [],
+      "futureApplications": [],
+      "status": "studied"
+    },
+    {
+      "id": "M01-T04",
+      "code": "M01-T04",
+      "title": "Представление чисел, текста и файлов в компьютере",
+      "description": "Утверждённая тема M01-T04: Представление чисел, текста и файлов в компьютере",
+      "level": 2,
+      "moduleId": "M01",
+      "topicId": "M01-T04",
+      "x": 1480,
+      "y": 820,
+      "prerequisites": [],
+      "futureApplications": [],
+      "status": "studied"
+    },
+    {
+      "id": "M01-T05",
+      "code": "M01-T05",
+      "title": "Математическая логика и операции над битами",
+      "description": "Утверждённая тема M01-T05: Математическая логика и операции над битами",
+      "level": 2,
+      "moduleId": "M01",
+      "topicId": "M01-T05",
+      "x": 100,
+      "y": 1040,
+      "prerequisites": [],
+      "futureApplications": [],
+      "status": "studied"
+    },
+    {
+      "id": "M01-T06",
+      "code": "M01-T06",
+      "title": "Математические основы инженерных расчётов",
+      "description": "Утверждённая тема M01-T06: Математические основы инженерных расчётов",
+      "level": 2,
+      "moduleId": "M01",
+      "topicId": "M01-T06",
+      "x": 560,
+      "y": 1040,
+      "prerequisites": [],
+      "futureApplications": [],
+      "status": "studied"
+    },
+    {
+      "id": "M01-T07",
+      "code": "M01-T07",
+      "title": "Комбинаторика, теория вероятностей и неопределённость",
+      "description": "Утверждённая тема M01-T07: Комбинаторика, теория вероятностей и неопределённость",
+      "level": 2,
+      "moduleId": "M01",
+      "topicId": "M01-T07",
+      "x": 1020,
+      "y": 1040,
+      "prerequisites": [],
+      "futureApplications": [],
+      "status": "studied"
+    },
+    {
+      "id": "M01-T08",
+      "code": "M01-T08",
+      "title": "Алгоритмы, модели и первоначальное устройство компьютера",
+      "description": "Утверждённая тема M01-T08: Алгоритмы, модели и первоначальное устройство компьютера",
+      "level": 2,
+      "moduleId": "M01",
+      "topicId": "M01-T08",
+      "x": 1480,
+      "y": 1040,
+      "prerequisites": [],
+      "futureApplications": [],
+      "status": "studied"
     },
     {
       "id": "skill-m01-t01-u01-01",
@@ -4552,11 +4741,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T01",
-      "x": 180,
-      "y": 230,
+      "x": 80,
+      "y": 1300,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "available"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t01-u01-02",
@@ -4566,11 +4755,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T01",
-      "x": 370,
-      "y": 230,
+      "x": 310,
+      "y": 1300,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "available"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t01-u02-01",
@@ -4580,11 +4769,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T01",
-      "x": 560,
-      "y": 230,
+      "x": 540,
+      "y": 1300,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "available"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t01-u02-02",
@@ -4594,11 +4783,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T01",
-      "x": 750,
-      "y": 230,
+      "x": 770,
+      "y": 1300,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "locked"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t02-u01-01",
@@ -4608,11 +4797,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T02",
-      "x": 940,
-      "y": 230,
+      "x": 1000,
+      "y": 1300,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "locked"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t02-u01-02",
@@ -4622,11 +4811,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T02",
-      "x": 1130,
-      "y": 230,
+      "x": 1230,
+      "y": 1300,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "locked"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t02-u02-01",
@@ -4636,11 +4825,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T02",
-      "x": 180,
-      "y": 330,
+      "x": 1460,
+      "y": 1300,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "locked"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t02-u02-02",
@@ -4650,11 +4839,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T02",
-      "x": 370,
-      "y": 330,
+      "x": 1690,
+      "y": 1300,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "locked"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t02-u03-01",
@@ -4664,11 +4853,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T02",
-      "x": 560,
-      "y": 330,
+      "x": 80,
+      "y": 1480,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "locked"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t02-u03-02",
@@ -4678,11 +4867,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T02",
-      "x": 750,
-      "y": 330,
+      "x": 310,
+      "y": 1480,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "locked"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t03-u01-01",
@@ -4692,11 +4881,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T03",
-      "x": 940,
-      "y": 330,
+      "x": 540,
+      "y": 1480,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "locked"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t03-u01-02",
@@ -4706,11 +4895,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T03",
-      "x": 1130,
-      "y": 330,
+      "x": 770,
+      "y": 1480,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "locked"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t03-u02-01",
@@ -4720,11 +4909,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T03",
-      "x": 180,
-      "y": 430,
+      "x": 1000,
+      "y": 1480,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "locked"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t03-u02-02",
@@ -4734,11 +4923,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T03",
-      "x": 370,
-      "y": 430,
+      "x": 1230,
+      "y": 1480,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "locked"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t03-u03-01",
@@ -4748,11 +4937,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T03",
-      "x": 560,
-      "y": 430,
+      "x": 1460,
+      "y": 1480,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "locked"
+      "status": "in_progress"
     },
     {
       "id": "skill-m01-t03-u03-02",
@@ -4762,123 +4951,11 @@
       "level": 3,
       "moduleId": "M01",
       "topicId": "M01-T03",
-      "x": 750,
-      "y": 430,
+      "x": 1690,
+      "y": 1480,
       "prerequisites": [],
       "futureApplications": [],
-      "status": "locked"
-    },
-    {
-      "id": "skill-m01-t03-u04-01",
-      "code": "skill-m01-t03-u04-01",
-      "title": "Дробные числа в позиционных системах: основное понятие",
-      "description": "Разряды справа от разделителя и отрицательные степени основания",
-      "level": 3,
-      "moduleId": "M01",
-      "topicId": "M01-T03",
-      "x": 940,
-      "y": 430,
-      "prerequisites": [],
-      "futureApplications": [],
-      "status": "locked"
-    },
-    {
-      "id": "skill-m01-t03-u04-02",
-      "code": "skill-m01-t03-u04-02",
-      "title": "Дробные числа в позиционных системах: практическое применение",
-      "description": "Точность, выбранное число знаков, проверка границ ошибки",
-      "level": 3,
-      "moduleId": "M01",
-      "topicId": "M01-T03",
-      "x": 1130,
-      "y": 430,
-      "prerequisites": [],
-      "futureApplications": [],
-      "status": "locked"
-    },
-    {
-      "id": "skill-m01-t03-u05-01",
-      "code": "skill-m01-t03-u05-01",
-      "title": "Двоичное сложение и вычитание: основное понятие",
-      "description": "Правила двоичного сложения и перенос в старший разряд",
-      "level": 3,
-      "moduleId": "M01",
-      "topicId": "M01-T03",
-      "x": 180,
-      "y": 530,
-      "prerequisites": [],
-      "futureApplications": [],
-      "status": "locked"
-    },
-    {
-      "id": "skill-m01-t03-u05-02",
-      "code": "skill-m01-t03-u05-02",
-      "title": "Двоичное сложение и вычитание: практическое применение",
-      "description": "Связь разрядности представления с потерей старшего переноса",
-      "level": 3,
-      "moduleId": "M01",
-      "topicId": "M01-T03",
-      "x": 370,
-      "y": 530,
-      "prerequisites": [],
-      "futureApplications": [],
-      "status": "locked"
-    },
-    {
-      "id": "skill-m01-t03-u06-01",
-      "code": "skill-m01-t03-u06-01",
-      "title": "Двоичное умножение и сдвиги: основное понятие",
-      "description": "Двоичное умножение на 0 и 1",
-      "level": 3,
-      "moduleId": "M01",
-      "topicId": "M01-T03",
-      "x": 560,
-      "y": 530,
-      "prerequisites": [],
-      "futureApplications": [],
-      "status": "locked"
-    },
-    {
-      "id": "skill-m01-t03-u06-02",
-      "code": "skill-m01-t03-u06-02",
-      "title": "Двоичное умножение и сдвиги: практическое применение",
-      "description": "Ограниченная ширина слова: отбрасывание битов и изменение результата",
-      "level": 3,
-      "moduleId": "M01",
-      "topicId": "M01-T03",
-      "x": 750,
-      "y": 530,
-      "prerequisites": [],
-      "futureApplications": [],
-      "status": "locked"
-    },
-    {
-      "id": "skill-m01-t03-u07-01",
-      "code": "skill-m01-t03-u07-01",
-      "title": "Ограниченная разрядность и переполнение: основное понятие",
-      "description": "Диапазон беззнаковых чисел из n бит: 0…2^n−1",
-      "level": 3,
-      "moduleId": "M01",
-      "topicId": "M01-T03",
-      "x": 940,
-      "y": 530,
-      "prerequisites": [],
-      "futureApplications": [],
-      "status": "locked"
-    },
-    {
-      "id": "skill-m01-t03-u07-02",
-      "code": "skill-m01-t03-u07-02",
-      "title": "Ограниченная разрядность и переполнение: практическое применение",
-      "description": "Первое знакомство с signed/unsigned; подробное представление отрицательных чисел в М01-Т04",
-      "level": 3,
-      "moduleId": "M01",
-      "topicId": "M01-T03",
-      "x": 1130,
-      "y": 530,
-      "prerequisites": [],
-      "futureApplications": [],
-      "status": "locked"
+      "status": "in_progress"
     }
   ],
   "graphEdges": [
@@ -4887,287 +4964,539 @@
       "from": "M01-T01",
       "to": "M01-T02",
       "type": "prerequisite",
-      "label": "prerequisite"
+      "label": "Связь между M01-T01 и M01-T02"
     },
     {
       "id": "rel-2",
       "from": "M01-T02",
       "to": "M01-T03",
       "type": "prerequisite",
-      "label": "prerequisite"
+      "label": "Связь между M01-T02 и M01-T03"
     },
     {
       "id": "rel-3",
       "from": "M01-T01",
       "to": "M01-T04",
       "type": "prerequisite",
-      "label": "prerequisite"
+      "label": "Связь между M01-T01 и M01-T04"
     },
     {
       "id": "rel-4",
       "from": "M01-T03",
       "to": "M01-T04",
       "type": "prerequisite",
-      "label": "prerequisite"
+      "label": "Связь между M01-T03 и M01-T04"
     },
     {
       "id": "rel-5",
       "from": "M01-T03",
       "to": "M01-T05",
       "type": "prerequisite",
-      "label": "prerequisite"
+      "label": "Связь между M01-T03 и M01-T05"
     },
     {
       "id": "rel-6",
       "from": "M01-T02",
       "to": "M01-T06",
       "type": "prerequisite",
-      "label": "prerequisite"
+      "label": "Связь между M01-T02 и M01-T06"
     },
     {
       "id": "rel-7",
       "from": "M01-T06",
       "to": "M01-T07",
       "type": "prerequisite",
-      "label": "prerequisite"
+      "label": "Связь между M01-T06 и M01-T07"
     },
     {
       "id": "rel-8",
       "from": "M01-T05",
       "to": "M01-T08",
       "type": "prerequisite",
-      "label": "prerequisite"
+      "label": "Связь между M01-T05 и M01-T08"
     },
     {
       "id": "rel-9",
       "from": "M01-T06",
       "to": "M01-T08",
       "type": "prerequisite",
-      "label": "prerequisite"
+      "label": "Связь между M01-T06 и M01-T08"
     },
     {
       "id": "rel-10",
       "from": "M01-T07",
       "to": "M01-T08",
       "type": "prerequisite",
-      "label": "prerequisite"
+      "label": "Связь между M01-T07 и M01-T08"
     },
     {
       "id": "rel-11",
       "from": "M01-T01",
       "to": "M01-T02",
       "type": "application",
-      "label": "application"
+      "label": "Связь между M01-T01 и M01-T02"
     },
     {
       "id": "rel-12",
       "from": "M01-T01",
       "to": "M01-T04",
       "type": "application",
-      "label": "application"
+      "label": "Связь между M01-T01 и M01-T04"
     },
     {
       "id": "rel-13",
       "from": "M01-T01",
       "to": "M03",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T01 и M03"
     },
     {
       "id": "rel-14",
       "from": "M01-T01",
       "to": "M06",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T01 и M06"
     },
     {
       "id": "rel-15",
       "from": "M01-T01",
       "to": "M16",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T01 и M16"
     },
     {
       "id": "rel-16",
       "from": "M01-T02",
       "to": "M01-T03",
       "type": "application",
-      "label": "application"
+      "label": "Связь между M01-T02 и M01-T03"
     },
     {
       "id": "rel-17",
       "from": "M01-T02",
       "to": "M01-T04",
       "type": "application",
-      "label": "application"
+      "label": "Связь между M01-T02 и M01-T04"
     },
     {
       "id": "rel-18",
       "from": "M01-T02",
       "to": "M04",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T02 и M04"
     },
     {
       "id": "rel-19",
       "from": "M01-T02",
       "to": "M06",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T02 и M06"
     },
     {
       "id": "rel-20",
       "from": "M01-T03",
       "to": "M01-T04",
       "type": "application",
-      "label": "application"
+      "label": "Связь между M01-T03 и M01-T04"
     },
     {
       "id": "rel-21",
       "from": "M01-T03",
       "to": "M01-T05",
       "type": "application",
-      "label": "application"
+      "label": "Связь между M01-T03 и M01-T05"
     },
     {
       "id": "rel-22",
       "from": "M01-T03",
       "to": "M02",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T03 и M02"
     },
     {
       "id": "rel-23",
       "from": "M01-T03",
       "to": "M09",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T03 и M09"
     },
     {
       "id": "rel-24",
       "from": "M01-T04",
       "to": "M01-T05",
       "type": "application",
-      "label": "application"
+      "label": "Связь между M01-T04 и M01-T05"
     },
     {
       "id": "rel-25",
       "from": "M01-T04",
       "to": "M09",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T04 и M09"
     },
     {
       "id": "rel-26",
       "from": "M01-T04",
       "to": "M10",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T04 и M10"
     },
     {
       "id": "rel-27",
       "from": "M01-T05",
       "to": "M01-T08",
       "type": "application",
-      "label": "application"
+      "label": "Связь между M01-T05 и M01-T08"
     },
     {
       "id": "rel-28",
       "from": "M01-T05",
       "to": "M02",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T05 и M02"
     },
     {
       "id": "rel-29",
       "from": "M01-T05",
       "to": "M11",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T05 и M11"
     },
     {
       "id": "rel-30",
       "from": "M01-T06",
       "to": "M01-T07",
       "type": "application",
-      "label": "application"
+      "label": "Связь между M01-T06 и M01-T07"
     },
     {
       "id": "rel-31",
       "from": "M01-T06",
       "to": "M02",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T06 и M02"
     },
     {
       "id": "rel-32",
       "from": "M01-T06",
       "to": "M03",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T06 и M03"
     },
     {
       "id": "rel-33",
       "from": "M01-T06",
       "to": "M08",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T06 и M08"
     },
     {
       "id": "rel-34",
       "from": "M01-T07",
       "to": "M03",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T07 и M03"
     },
     {
       "id": "rel-35",
       "from": "M01-T07",
       "to": "M11",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T07 и M11"
     },
     {
       "id": "rel-36",
       "from": "M01-T07",
       "to": "M12",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T07 и M12"
     },
     {
       "id": "rel-37",
       "from": "M01-T07",
       "to": "M13",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T07 и M13"
     },
     {
       "id": "rel-38",
       "from": "M01-T08",
       "to": "M02",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T08 и M02"
     },
     {
       "id": "rel-39",
       "from": "M01-T08",
       "to": "M06",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T08 и M06"
     },
     {
       "id": "rel-40",
       "from": "M01-T08",
       "to": "M09",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T08 и M09"
     },
     {
       "id": "rel-41",
       "from": "M01-T08",
       "to": "M10",
       "type": "application-to-module",
-      "label": "application-to-module"
+      "label": "Связь между M01-T08 и M10"
+    },
+    {
+      "id": "route-M01-M02",
+      "from": "M01",
+      "to": "M02",
+      "type": "interdisciplinary",
+      "label": "Схемотехника и элементы"
+    },
+    {
+      "id": "route-M01-M03",
+      "from": "M01",
+      "to": "M03",
+      "type": "interdisciplinary",
+      "label": "Сигналы и электросвязь"
+    },
+    {
+      "id": "route-M01-M06",
+      "from": "M01",
+      "to": "M06",
+      "type": "interdisciplinary",
+      "label": "Сетевая адресация и биты"
+    },
+    {
+      "id": "route-M01-M09",
+      "from": "M01",
+      "to": "M09",
+      "type": "interdisciplinary",
+      "label": "Двоичная логика ЭВМ"
+    },
+    {
+      "id": "route-M01-M10",
+      "from": "M01",
+      "to": "M10",
+      "type": "interdisciplinary",
+      "label": "Алгоритмы вычислений"
+    },
+    {
+      "id": "route-M02-M03",
+      "from": "M02",
+      "to": "M03",
+      "type": "interdisciplinary",
+      "label": "Физические каналы связи"
+    },
+    {
+      "id": "route-M03-M04",
+      "from": "M03",
+      "to": "M04",
+      "type": "interdisciplinary",
+      "label": "Аналого-цифровое преобразование"
+    },
+    {
+      "id": "route-M04-M05",
+      "from": "M04",
+      "to": "M05",
+      "type": "interdisciplinary",
+      "label": "Синхронные транспортные потоки"
+    },
+    {
+      "id": "route-M05-M06",
+      "from": "M05",
+      "to": "M06",
+      "type": "interdisciplinary",
+      "label": "Оптические каналы для пакетов"
+    },
+    {
+      "id": "route-M06-M07",
+      "from": "M06",
+      "to": "M07",
+      "type": "interdisciplinary",
+      "label": "Стек протоколов и маршрутизация"
+    },
+    {
+      "id": "route-M07-M08",
+      "from": "M07",
+      "to": "M08",
+      "type": "interdisciplinary",
+      "label": "Беспроводная передача пакетов"
+    },
+    {
+      "id": "route-M09-M10",
+      "from": "M09",
+      "to": "M10",
+      "type": "interdisciplinary",
+      "label": "Исполнение инструкций процессором"
+    },
+    {
+      "id": "route-M10-M11",
+      "from": "M10",
+      "to": "M11",
+      "type": "interdisciplinary",
+      "label": "Реализация криптоалгоритмов"
+    },
+    {
+      "id": "route-M11-M12",
+      "from": "M11",
+      "to": "M12",
+      "type": "interdisciplinary",
+      "label": "Симметричные и асимметричные шифры"
+    },
+    {
+      "id": "route-M12-M14",
+      "from": "M12",
+      "to": "M14",
+      "type": "interdisciplinary",
+      "label": "Протоколы защищенного обмена"
+    },
+    {
+      "id": "route-M13-M15",
+      "from": "M13",
+      "to": "M15",
+      "type": "interdisciplinary",
+      "label": "Аппаратные векторы атак"
+    },
+    {
+      "id": "route-M14-M17",
+      "from": "M14",
+      "to": "M17",
+      "type": "interdisciplinary",
+      "label": "Защита периметра и шифрование"
+    },
+    {
+      "id": "route-M15-M17",
+      "from": "M15",
+      "to": "M17",
+      "type": "interdisciplinary",
+      "label": "Мониторинг хостов и сети"
+    },
+    {
+      "id": "route-M17-M18",
+      "from": "M17",
+      "to": "M18",
+      "type": "interdisciplinary",
+      "label": "Комплексные защищенные испытания"
+    },
+    {
+      "id": "route-M01-to-T01",
+      "from": "M01",
+      "to": "M01-T01",
+      "type": "interdisciplinary",
+      "label": "Старт программы M01"
+    },
+    {
+      "id": "skill-edge-M01-T01-skill-m01-t01-u01-01",
+      "from": "M01-T01",
+      "to": "skill-m01-t01-u01-01",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T01-skill-m01-t01-u01-02",
+      "from": "M01-T01",
+      "to": "skill-m01-t01-u01-02",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T01-skill-m01-t01-u02-01",
+      "from": "M01-T01",
+      "to": "skill-m01-t01-u02-01",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T01-skill-m01-t01-u02-02",
+      "from": "M01-T01",
+      "to": "skill-m01-t01-u02-02",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T02-skill-m01-t02-u01-01",
+      "from": "M01-T02",
+      "to": "skill-m01-t02-u01-01",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T02-skill-m01-t02-u01-02",
+      "from": "M01-T02",
+      "to": "skill-m01-t02-u01-02",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T02-skill-m01-t02-u02-01",
+      "from": "M01-T02",
+      "to": "skill-m01-t02-u02-01",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T02-skill-m01-t02-u02-02",
+      "from": "M01-T02",
+      "to": "skill-m01-t02-u02-02",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T02-skill-m01-t02-u03-01",
+      "from": "M01-T02",
+      "to": "skill-m01-t02-u03-01",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T02-skill-m01-t02-u03-02",
+      "from": "M01-T02",
+      "to": "skill-m01-t02-u03-02",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T03-skill-m01-t03-u01-01",
+      "from": "M01-T03",
+      "to": "skill-m01-t03-u01-01",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T03-skill-m01-t03-u01-02",
+      "from": "M01-T03",
+      "to": "skill-m01-t03-u01-02",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T03-skill-m01-t03-u02-01",
+      "from": "M01-T03",
+      "to": "skill-m01-t03-u02-01",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T03-skill-m01-t03-u02-02",
+      "from": "M01-T03",
+      "to": "skill-m01-t03-u02-02",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T03-skill-m01-t03-u03-01",
+      "from": "M01-T03",
+      "to": "skill-m01-t03-u03-01",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
+    },
+    {
+      "id": "skill-edge-M01-T03-skill-m01-t03-u03-02",
+      "from": "M01-T03",
+      "to": "skill-m01-t03-u03-02",
+      "type": "prerequisite",
+      "label": "Освоение навыка"
     }
   ]
 }

@@ -41,8 +41,8 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
 }) => {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>("M01");
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 50, y: 50 });
+  const [zoom, setZoom] = useState(0.8);
+  const [pan, setPan] = useState({ x: 40, y: 30 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [searchQuery, setSearchQuery] = useState("");
@@ -118,8 +118,8 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
   };
 
   const handleFitToScreen = () => {
-    setZoom(0.85);
-    setPan({ x: 80, y: 60 });
+    setZoom(0.8);
+    setPan({ x: 40, y: 30 });
   };
 
   const getStatusColor = (status?: SkillMasteryStatus) => {
@@ -137,6 +137,12 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
       default:
         return { border: "#334155", bg: "#0f172a", text: "#64748b", label: "Заблокировано" };
     }
+  };
+
+  const getNodeDims = (node: GraphNode) => {
+    if (node.level === 1) return { w: 200, h: 64 };
+    if (node.level === 2) return { w: 220, h: 60 };
+    return { w: 160, h: 48 };
   };
 
   return (
@@ -203,9 +209,10 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
             onChange={(e) => setLevelFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
             className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
           >
-            <option value="all">Все уровни</option>
-            <option value="1">Уровень 1: 18 Модулей</option>
-            <option value="3">Уровень 3: Компетенции</option>
+            <option value="all">Все уровни (Полная карта)</option>
+            <option value="1">Уровень 1: 18 Модулей (Магистрали)</option>
+            <option value="2">Уровень 2: 8 Тем M01 (Коридоры)</option>
+            <option value="3">Уровень 3: Компетенции и навыки</option>
           </select>
 
           {/* Zoom controls */}
@@ -277,6 +284,31 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
                 <stop offset="100%" stopColor="#1e293b" stopOpacity="0.2" />
               </linearGradient>
 
+              {/* Directional Flight-Route Arrowhead Markers */}
+              <marker
+                id="flightArrowCyan"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto"
+              >
+                <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#36D7F5" />
+              </marker>
+
+              <marker
+                id="flightArrowDimmed"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="5"
+                markerHeight="5"
+                orient="auto"
+              >
+                <path d="M 0 2 L 8 5 L 0 8 z" fill="#334155" />
+              </marker>
+
               <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
                 <feGaussianBlur stdDeviation="3" result="blur" />
                 <feMerge>
@@ -286,27 +318,32 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
               </filter>
             </defs>
 
-            {/* Flight-Route Edges (Curved Bézier Paths) */}
+            {/* Flight-Route Edges (Curved Bézier Great-Circle Arcs) */}
             <g className="edges-layer">
               {visibleEdges.map((edge) => {
                 const source = nodes.find((n) => n.id === edge.from);
                 const target = nodes.find((n) => n.id === edge.to);
                 if (!source || !target) return null;
 
-                const sx = source.x + 80;
-                const sy = source.y + 25;
-                const tx = target.x + 80;
-                const ty = target.y + 25;
+                const sDims = getNodeDims(source);
+                const tDims = getNodeDims(target);
+                const sx = source.x + sDims.w / 2;
+                const sy = source.y + sDims.h / 2;
+                const tx = target.x + tDims.w / 2;
+                const ty = target.y + tDims.h / 2;
 
-                // Bezier arc control points for aviation route curves
+                // Aviation great-circle arc: perpendicular normal vector
                 const dx = tx - sx;
                 const dy = ty - sy;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const curvature = Math.min(60, dist * 0.15);
-                const cx1 = sx + dx * 0.4;
-                const cy1 = sy - curvature;
-                const cx2 = sx + dx * 0.7;
-                const cy2 = ty - curvature;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                const nx = -dy / dist;
+                const ny = dx / dist;
+                const arcHeight = Math.min(80, Math.max(30, dist * 0.22));
+
+                const cx1 = sx + dx * 0.35 + nx * arcHeight;
+                const cy1 = sy + dy * 0.35 + ny * arcHeight;
+                const cx2 = sx + dx * 0.65 + nx * arcHeight;
+                const cy2 = sy + dy * 0.65 + ny * arcHeight;
 
                 const pathData = `M ${sx} ${sy} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${tx} ${ty}`;
 
@@ -332,13 +369,14 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
                         filter="url(#glowCyan)"
                       />
                     )}
-                    {/* Main Flight Path */}
+                    {/* Main Oriented Flight Path */}
                     <path
                       d={pathData}
                       fill="none"
                       stroke={strokeColor}
                       strokeWidth={strokeWidth}
                       strokeDasharray={strokeDash}
+                      markerEnd={isConnected ? "url(#flightArrowCyan)" : "url(#flightArrowDimmed)"}
                       className={isConnected ? "animate-pulse" : ""}
                     />
                     {/* Moving pulse light on active route */}
@@ -363,9 +401,7 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
                 const isHovered = hoveredNodeId === node.id;
                 const isConnected = !activeFocusId || connectedNodeIds.has(node.id);
                 const statusStyle = getStatusColor(node.status);
-
-                const width = node.level === 1 ? 170 : 150;
-                const height = node.level === 1 ? 58 : 50;
+                const { w: width, h: height } = getNodeDims(node);
 
                 return (
                   <g
@@ -444,18 +480,18 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
                     {/* Title */}
                     <text
                       x="14"
-                      y="37"
+                      y={node.level === 3 ? "32" : "38"}
                       fill="#F1F5FA"
-                      fontSize={node.level === 1 ? "11" : "10"}
+                      fontSize={node.level === 1 ? "11.5" : node.level === 2 ? "11" : "10"}
                       fontWeight="600"
                     >
-                      {node.title.length > 20 ? node.title.slice(0, 18) + "…" : node.title}
+                      {node.title.length > 25 ? node.title.slice(0, 23) + "…" : node.title}
                     </text>
 
                     {/* Subtitle / Status text */}
                     <text
                       x="14"
-                      y="49"
+                      y={node.level === 1 ? "53" : node.level === 2 ? "51" : "42"}
                       fill={statusStyle.text}
                       fontSize="8.5"
                     >
