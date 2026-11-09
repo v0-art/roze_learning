@@ -1,421 +1,115 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import React, { useEffect, useState } from 'react';
+import { Bell, BookOpen, ChartNoAxesCombined, ChevronDown, ClipboardList, Compass, FileCheck2, FolderOpen, GraduationCap, LayoutDashboard, LogOut, Menu, Network, UserRound, Users, X } from 'lucide-react';
+import { BrandMark } from './BrandMark';
+import type { MessageItem } from '../types';
+import { getCurrentUser, getNotifications, subscribeToDatabase } from '../services/storage';
 
-import React, { useState, useEffect } from 'react';
-import {
-  Shield,
-  Bell,
-  User as UserIcon,
-  ChevronDown,
-  Compass,
-  BookOpen,
-  Award,
-  Layers,
-  FileCheck2,
-  Users,
-  FolderTree,
-  FolderArchive,
-  RotateCcw,
-  Menu,
-  X,
-} from 'lucide-react';
-import {
-  getCurrentUser,
-  setCurrentUserId,
-  getAllUsers,
-  getNotifications,
-  subscribeToDatabase,
-  resetDatabaseToSeed,
-} from '../services/storage';
-import { User, AdminNotification } from '../types';
-
-interface NavbarProps {
-  currentRoute: string;
-  navigate: (route: string) => void;
-}
+interface NavbarProps { currentRoute: string; navigate: (route: string) => void }
 
 export const Navbar: React.FC<NavbarProps> = ({ currentRoute, navigate }) => {
-  const [currentUser, setUser] = useState<User>(getCurrentUser());
-  const [users, setUsers] = useState<User[]>(getAllUsers());
-  const [notifications, setNotifications] = useState<AdminNotification[]>(getNotifications());
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showNotifMenu, setShowNotifMenu] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState(getCurrentUser());
+  const [notifications, setNotifications] = useState(getNotifications());
+  const [messages, setMessages] = useState<MessageItem[]>([]);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
+  useEffect(() => subscribeToDatabase(() => { setUser(getCurrentUser()); setNotifications(getNotifications()); }), []);
   useEffect(() => {
-    const unsub = subscribeToDatabase(() => {
-      setUser(getCurrentUser());
-      setUsers(getAllUsers());
-      setNotifications(getNotifications());
-    });
-    return unsub;
-  }, []);
-
-  const unreadCount = notifications.filter((n) => n.status === 'unread').length;
-
-  const handleSwitchUser = (userId: string) => {
-    setCurrentUserId(userId);
-    setShowUserMenu(false);
-    setMobileMenuOpen(false);
+    let active = true;
+    const refresh = () => { void fetch('/api/messages/inbox').then(r => r.ok ? r.json() : []).then(items => { if (active) setMessages(items); }).catch(() => {}); };
+    refresh();
+    const timer = window.setInterval(refresh, 15000);
+    window.addEventListener('nexus-messages-updated', refresh);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener('nexus-messages-updated', refresh); };
+  }, [user.id]);
+  useEffect(() => {
+    if (!mobileOpen && !profileOpen && !notificationsOpen) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') { setMobileOpen(false); setProfileOpen(false); setNotificationsOpen(false); } };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileOpen, profileOpen, notificationsOpen]);
+  const incoming = messages.filter(m => m.recipientId === user.id);
+  const links = user.role === 'admin' ? [
+    {path: '/admin', label: 'Обзор'},
+    {path: '/admin/content', label: 'Учебный план'},
+    {path: '/admin/users', label: 'Ученики'},
+    {path: '/admin/reports', label: 'Отчёты'},
+    {path: '/admin/exams', label: 'Экзамены'},
+    {path: '/admin/content/library', label: 'Библиотека'},
+    {path: '/homework', label: 'ДЗ учеников'},
+    {path: '/knowledge-map', label: 'Карта знаний'},
+  ] : [
+    {path: '/dashboard', label: 'Дашборд'},
+    {path: '/course', label: 'Модули'},
+    {path: '/knowledge-map', label: 'Карта знаний'},
+    {path: '/progress', label: 'Прогресс'},
+    {path: '/exam-preparation', label: 'Банк экзаменов'},
+    {path: '/homework', label: 'ДЗ'},
+  ];
+  const linkIcons: Record<string, React.ElementType> = {
+    '/admin':LayoutDashboard, '/admin/content':Network, '/admin/users':Users, '/admin/reports':FileCheck2,
+    '/admin/exams':GraduationCap, '/admin/content/library':FolderOpen, '/dashboard':LayoutDashboard,
+    '/course':BookOpen, '/knowledge-map':Compass, '/progress':ChartNoAxesCombined,
+    '/exam-preparation':GraduationCap, '/homework':ClipboardList,
+  };
+  const go = (route: string) => { setMobileOpen(false); setProfileOpen(false); setNotificationsOpen(false); navigate(route); };
+  const logout = async () => {
+    setLoggingOut(true);
+    try {
+      const response = await fetch('/api/auth/logout', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
+      if (!response.ok) throw new Error('Не удалось выйти. Попробуйте ещё раз.');
+      window.location.replace('/');
+    } catch (error) { alert(error instanceof Error ? error.message : 'Не удалось выйти.'); setLoggingOut(false); }
   };
 
-  const handleResetData = () => {
-    if (window.confirm('Сбросить базу данных платформы к исходному состоянию учебной программы?')) {
-      resetDatabaseToSeed();
-      navigate('/dashboard');
-    }
-  };
-
-  const navItemClass = (route: string, isPrefix: boolean = false) => {
-    const active = isPrefix ? currentRoute.startsWith(route) : currentRoute === route;
-    return `px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center space-x-1.5 ${
-      active
-        ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 shadow-sm shadow-cyan-500/10'
-        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-    }`;
-  };
-
-  return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-[#090F1C]/95 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand */}
-        <div
-          className="flex items-center space-x-3 cursor-pointer group"
-          onClick={() => {
-            navigate('/dashboard');
-            setMobileMenuOpen(false);
-          }}
-        >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400/40 group-hover:scale-105 transition-transform">
-            <Shield className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-bold text-lg tracking-wider text-slate-100 font-mono">NEXUS</span>
-              <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 font-semibold tracking-widest">
-                ACADEMY
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-400 tracking-tight hidden sm:block">
-              Интерактивная подготовка по ИБ и телекоммуникациям
-            </p>
-          </div>
+  return <header data-role={user.role} className="app-navbar sticky top-0 z-40 w-full shrink-0 border-b border-slate-800 bg-[#110d1b]/95 text-slate-100">
+    <div className="app-navbar-bar mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6">
+      <button onClick={() => go(user.role === 'admin' ? '/admin' : '/dashboard')} className="flex shrink-0 items-center gap-2" aria-label="На главную">
+        <span className="hidden min-[420px]:inline-flex"><BrandMark /></span>
+        <span className="app-mobile-brand min-[420px]:hidden"><img src="/icon.png" alt=""/><span>rozephyr<span>.</span>learning</span></span>
+      </button>
+      {user.isDemo && <span className="rounded-md border border-amber-400/50 bg-amber-950/70 px-2 py-1 text-xs font-bold text-amber-200">ДЕМО · СИНТЕТИЧЕСКИЕ ДАННЫЕ</span>}
+      <nav aria-label={user.role === 'admin' ? 'Навигация ментора' : 'Навигация ученика'} className="app-desktop-nav items-center gap-1">
+        {links.map(link => <button key={link.path} onClick={() => go(link.path)} className={`rounded-lg px-2.5 py-2 text-sm ${currentRoute === link.path ? 'bg-cyan-950 text-cyan-300' : 'text-slate-300 hover:bg-slate-800'}`}>{link.label}</button>)}
+      </nav>
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+        <div className="relative">
+          <button onClick={() => { setNotificationsOpen(!notificationsOpen); setProfileOpen(false); setMobileOpen(false); }} aria-expanded={notificationsOpen} className="rounded-lg p-2 hover:bg-slate-800" aria-label="Уведомления"><Bell size={19} />{(incoming.some(m => !m.readAt) || (user.role === 'admin' && notifications.some(n => n.status === 'unread'))) && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-cyan-400" />}</button>
+          {notificationsOpen && <div className="absolute right-0 top-full z-50 mt-2 max-h-80 w-[min(20rem,calc(100vw-1.5rem))] overflow-y-auto rounded-xl border border-slate-700 bg-[#20172f] p-3 shadow-xl">
+            <p className="mb-2 text-xs font-semibold text-slate-400">Уведомления</p>
+            {incoming.slice(0, 8).map(m => <button key={m.id} onClick={() => go('/profile')} className="block w-full border-t border-slate-700 p-2 text-left text-sm"><span className="block text-slate-100">{!m.readAt ? '● ' : ''}{m.subject || 'Сообщение'}</span><span className="line-clamp-2 text-slate-400">{m.content}</span></button>)}
+            {user.role === 'admin' && notifications.slice(0, 8).map(n => <button key={n.id} onClick={() => go('/admin/reports')} className="block w-full border-t border-slate-800 p-2 text-left text-xs"><span className="block text-slate-100">{n.title}</span><span className="text-slate-400">{n.description}</span></button>)}
+            {incoming.length === 0 && (user.role !== 'admin' || notifications.length === 0) && <p className="text-sm text-slate-400">Нет уведомлений</p>}
+          </div>}
         </div>
-
-        {/* Primary Desktop Nav */}
-        <nav className="hidden lg:flex items-center space-x-1 font-medium">
-          <button onClick={() => navigate('/dashboard')} className={navItemClass('/dashboard')}>
-            <span>Дашборд</span>
+        <div className="relative">
+          <button onClick={() => { setProfileOpen(!profileOpen); setNotificationsOpen(false); setMobileOpen(false); }} className="flex h-10 min-w-10 items-center justify-center gap-2 rounded-lg border border-slate-700 px-2 text-left sm:px-3" aria-label="Профиль" aria-expanded={profileOpen}>
+            {user.avatarUrl ? <img src={user.avatarUrl} alt="" className="h-7 w-7 rounded-full object-cover" /> : <UserRound size={20} />}<span className="hidden max-w-32 truncate text-sm font-semibold sm:inline">{user.displayName}</span><span className="hidden text-sm text-cyan-400 sm:inline">{user.role === 'admin' ? 'Ментор' : 'Ученик'}</span><ChevronDown size={14} className="hidden sm:block" />
           </button>
-
-          <button onClick={() => navigate('/course')} className={navItemClass('/course', true)}>
-            <BookOpen className="w-4 h-4" />
-            <span>18 Модулей</span>
-          </button>
-
-          <button onClick={() => navigate('/knowledge-map')} className={navItemClass('/knowledge-map')}>
-            <Compass className="w-4 h-4 text-cyan-400 animate-pulse" />
-            <span className="font-semibold text-cyan-300">Карта знаний</span>
-          </button>
-
-          <button onClick={() => navigate('/progress')} className={navItemClass('/progress')}>
-            <Layers className="w-4 h-4" />
-            <span>Прогресс</span>
-          </button>
-
-          <button onClick={() => navigate('/exam-preparation')} className={navItemClass('/exam-preparation')}>
-            <Award className="w-4 h-4" />
-            <span>Банк экзаменов</span>
-          </button>
-
-          <button onClick={() => navigate('/homework')} className={navItemClass('/homework')}>
-            <FileCheck2 className="w-4 h-4" />
-            <span>ДЗ</span>
-          </button>
-
-          {/* Admin Workspace */}
-          {currentUser.role === 'admin' && (
-            <div className="flex items-center space-x-1 border-l border-slate-800 pl-2 ml-1">
-              <button
-                onClick={() => navigate('/admin')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-1 ${
-                  currentRoute === '/admin'
-                    ? 'bg-violet-500/20 text-violet-300 border border-violet-500/40'
-                    : 'text-violet-400 hover:bg-violet-950/40 hover:text-violet-300'
-                }`}
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>Обзор</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/admin/content')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-1 ${
-                  currentRoute === '/admin/content'
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold'
-                    : 'text-cyan-400 hover:bg-cyan-950/40 hover:text-cyan-300'
-                }`}
-              >
-                <FolderTree className="w-3.5 h-3.5" />
-                <span>Учебный план</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/admin/content/library')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-1 ${
-                  currentRoute === '/admin/content/library'
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold'
-                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
-                }`}
-              >
-                <FolderArchive className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Библиотека</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/admin/exams')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-1 ${
-                  currentRoute === '/admin/exams'
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold'
-                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
-                }`}
-              >
-                <Award className="w-3.5 h-3.5 text-amber-400" />
-                <span>Экзамены</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/admin/reports')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-1 ${
-                  currentRoute === '/admin/reports'
-                    ? 'bg-violet-500/20 text-violet-300 border border-violet-500/40'
-                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
-                }`}
-              >
-                <FileCheck2 className="w-3.5 h-3.5" />
-                <span>Отчёты</span>
-              </button>
-            </div>
-          )}
-        </nav>
-
-        {/* Right side controls */}
-        <div className="flex items-center space-x-2 sm:space-x-3">
-          {/* Notifications Button */}
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifMenu(!showNotifMenu)}
-              className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 relative focus:outline-none transition-all"
-              aria-label="Уведомления"
-            >
-              <Bell className="w-5 h-5" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-cyan-400 text-slate-950 text-[10px] font-bold flex items-center justify-center animate-pulse">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-
-            {showNotifMenu && (
-              <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-[#111B2E] border border-slate-700 shadow-2xl py-2 z-50">
-                <div className="px-4 py-2 border-b border-slate-800 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-                    Уведомления ({notifications.length})
-                  </span>
-                  <span className="text-[11px] text-cyan-400 font-mono">
-                    {unreadCount > 0 ? `${unreadCount} новых` : 'Все прочитаны'}
-                  </span>
-                </div>
-                <div className="max-h-72 overflow-y-auto divide-y divide-slate-800/60">
-                  {notifications.length === 0 ? (
-                    <div className="p-4 text-center text-xs text-slate-400">
-                      Нет событий для отображения
-                    </div>
-                  ) : (
-                    notifications.slice(0, 8).map((notif) => (
-                      <div
-                        key={notif.id}
-                        onClick={() => {
-                          setShowNotifMenu(false);
-                          if (currentUser.role === 'admin') navigate('/admin/reports');
-                        }}
-                        className="p-3 hover:bg-slate-800/40 cursor-pointer transition-colors"
-                      >
-                        <div className="flex items-start justify-between">
-                          <p className="text-xs font-medium text-slate-200">{notif.title}</p>
-                          <span className="text-[10px] text-slate-400 ml-2 whitespace-nowrap">
-                            {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">{notif.description}</p>
-                      </div>
-                    ))
-                  )}
-                </div>
-                {currentUser.role === 'admin' && (
-                  <div className="p-2 border-t border-slate-800 text-center">
-                    <button
-                      onClick={() => {
-                        setShowNotifMenu(false);
-                        navigate('/admin/reports');
-                      }}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 font-medium"
-                    >
-                      Перейти во входящие отчёты →
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* User selector button */}
-          <div className="relative">
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-2 px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900/80 hover:bg-slate-800/80 transition-all text-left"
-            >
-              <div className="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center font-bold text-xs">
-                {currentUser.displayName.charAt(0)}
-              </div>
-              <div className="hidden sm:block text-left">
-                <p className="text-xs font-semibold text-slate-200 leading-tight">
-                  {currentUser.displayName.split(' ')[0]}
-                </p>
-                <p className="text-[10px] text-cyan-400 font-mono">
-                  {currentUser.role === 'admin' ? 'Ментор' : 'Студент'}
-                </p>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </button>
-
-            {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[#111B2E] border border-slate-700 shadow-2xl py-2 z-50">
-                <div className="px-4 py-2 border-b border-slate-800">
-                  <p className="text-xs text-slate-400">Текущий профиль:</p>
-                  <p className="text-sm font-semibold text-slate-100">{currentUser.displayName}</p>
-                  <p className="text-xs text-cyan-400 font-mono">{currentUser.email}</p>
-                </div>
-
-                <div className="py-2">
-                  <p className="px-4 text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
-                    Переключить пользователя:
-                  </p>
-                  {users.map((u) => (
-                    <button
-                      key={u.id}
-                      onClick={() => handleSwitchUser(u.id)}
-                      className={`w-full px-4 py-2 text-left text-xs flex items-center justify-between hover:bg-slate-800/60 transition-colors ${
-                        u.id === currentUser.id ? 'text-cyan-400 font-semibold bg-cyan-500/10' : 'text-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <UserIcon className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{u.displayName}</span>
-                      </div>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
-                        {u.role === 'admin' ? 'Ментор' : 'Студент'}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="border-t border-slate-800 pt-2 px-2">
-                  <button
-                    onClick={handleResetData}
-                    className="w-full px-3 py-1.5 text-left text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/20 rounded-md flex items-center space-x-2 transition-colors"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Сбросить данные к эталону</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile Menu Toggle */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-200 lg:hidden focus:outline-none"
-            aria-label="Открыть мобильное меню"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {profileOpen && <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border border-slate-700 bg-[#20172f] p-3 shadow-xl">
+            <p className="truncate text-sm font-semibold">{user.displayName}</p><p className="mb-3 text-xs text-slate-400">{user.role === 'admin' ? 'Главный ментор' : 'Ученик'}</p>
+            <button onClick={() => go('/profile')} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-100 hover:bg-slate-800"><UserRound size={16} /> Личный кабинет</button>
+            <button onClick={logout} disabled={loggingOut} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rose-300 hover:bg-slate-800 disabled:opacity-50"><LogOut size={16} /> {loggingOut ? 'Выход…' : 'Выйти'}</button>
+          </div>}
         </div>
+        <button onClick={() => { setMobileOpen(!mobileOpen); setProfileOpen(false); setNotificationsOpen(false); }} className="app-menu-toggle" aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-controls="app-mobile-navigation" aria-expanded={mobileOpen}>{mobileOpen ? <X size={21} /> : <Menu size={21} />}</button>
       </div>
-
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-slate-800 bg-[#090F1C] px-4 pt-3 pb-6 space-y-2">
-          <button
-            onClick={() => {
-              navigate('/dashboard');
-              setMobileMenuOpen(false);
-            }}
-            className="w-full py-2 px-3 rounded-lg text-left text-sm font-medium text-slate-200 hover:bg-slate-800"
-          >
-            Дашборд
-          </button>
-          <button
-            onClick={() => {
-              navigate('/course');
-              setMobileMenuOpen(false);
-            }}
-            className="w-full py-2 px-3 rounded-lg text-left text-sm font-medium text-slate-200 hover:bg-slate-800"
-          >
-            18 Модулей курса
-          </button>
-          <button
-            onClick={() => {
-              navigate('/knowledge-map');
-              setMobileMenuOpen(false);
-            }}
-            className="w-full py-2 px-3 rounded-lg text-left text-sm font-medium text-cyan-400 hover:bg-slate-800"
-          >
-            Карта знаний (Flight Route)
-          </button>
-          <button
-            onClick={() => {
-              navigate('/progress');
-              setMobileMenuOpen(false);
-            }}
-            className="w-full py-2 px-3 rounded-lg text-left text-sm font-medium text-slate-200 hover:bg-slate-800"
-          >
-            Прогресс и пробелы
-          </button>
-          <button
-            onClick={() => {
-              navigate('/exam-preparation');
-              setMobileMenuOpen(false);
-            }}
-            className="w-full py-2 px-3 rounded-lg text-left text-sm font-medium text-slate-200 hover:bg-slate-800"
-          >
-            Открытый банк экзаменов
-          </button>
-          <button
-            onClick={() => {
-              navigate('/homework');
-              setMobileMenuOpen(false);
-            }}
-            className="w-full py-2 px-3 rounded-lg text-left text-sm font-medium text-slate-200 hover:bg-slate-800"
-          >
-            Домашние задания
-          </button>
-          {currentUser.role === 'admin' && (
-            <button
-              onClick={() => {
-                navigate('/admin');
-                setMobileMenuOpen(false);
-              }}
-              className="w-full py-2 px-3 rounded-lg text-left text-sm font-medium text-violet-400 hover:bg-slate-800"
-            >
-              Панель главного ментора
-            </button>
-          )}
-        </div>
-      )}
-    </header>
-  );
+    </div>
+    <nav aria-label="Быстрый доступ" className="app-mobile-quick">{(user.role === 'admin' ? ['/admin','/admin/content','/admin/users','/admin/reports','/knowledge-map'] : ['/dashboard','/course','/knowledge-map','/progress','/homework']).map(path => {
+      const link = links.find(item => item.path === path); if (!link) return null;
+      const Icon = linkIcons[path] || Compass; const active = currentRoute === path;
+      const label = path === '/knowledge-map' ? 'Карта' : path === '/admin/content' ? 'План' : path === '/dashboard' ? 'Главная' : path === '/homework' ? 'ДЗ' : link.label;
+      return <button key={path} onClick={() => go(path)} aria-current={active ? 'page' : undefined} aria-label={link.label} className={`app-mobile-quick-item ${active ? 'is-active' : ''}`}><Icon size={19}/><span>{label}</span></button>;
+    })}</nav>
+    {mobileOpen && <div className="app-mobile-overlay">
+      <button className="app-mobile-backdrop" aria-label="Закрыть навигацию" onClick={() => setMobileOpen(false)} />
+      <nav id="app-mobile-navigation" aria-label="Мобильная навигация" className="app-mobile-drawer">
+        <div className="app-mobile-drawer-heading"><div><p>НАВИГАЦИЯ</p><strong>{user.role === 'admin' ? 'Кабинет ментора' : 'Кабинет ученика'}</strong></div><span>{user.role === 'admin' ? 'Ментор' : 'Ученик'}</span></div>
+        <div className="app-mobile-links">{links.map(link => { const Icon = linkIcons[link.path] || Compass; const active = currentRoute === link.path; return <button key={link.path} onClick={() => go(link.path)} aria-current={active ? 'page' : undefined} className={`app-mobile-link ${active ? 'is-active' : ''}`}><span className="app-mobile-link-icon"><Icon size={18}/></span><span>{link.label}</span>{active && <span className="app-mobile-active-dot"/>}</button>; })}</div>
+        <div className="app-mobile-account"><p>ЛИЧНОЕ</p><button onClick={() => go('/profile')} className="app-mobile-link"><span className="app-mobile-link-icon"><UserRound size={18}/></span><span>Личный кабинет</span></button><button onClick={logout} disabled={loggingOut} className="app-mobile-link app-mobile-logout"><span className="app-mobile-link-icon"><LogOut size={18}/></span><span>{loggingOut ? 'Выход…' : 'Выйти'}</span></button></div>
+      </nav>
+    </div>}
+  </header>;
 };

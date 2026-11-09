@@ -70,13 +70,13 @@ export const ProgressView: React.FC = () => {
 
       {/* Top 3 High-Level Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="p-5 rounded-2xl border border-slate-800 bg-[#111B2E] shadow-xl">
+        <div className="p-5 rounded-2xl border border-slate-800 bg-[#20172f] shadow-xl">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-400">
             <span>Пройдено уроков</span>
             <Layers className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="mt-2 flex items-baseline space-x-2">
-            <span className="text-3xl font-extrabold font-mono text-slate-100">{attempts.length}</span>
+            <span className="text-3xl font-extrabold font-mono text-slate-100">{new Set(attempts.map(a => a.lessonId)).size}</span>
             <span className="text-xs text-slate-400 font-mono">занятий сдано</span>
           </div>
           <p className="text-[11px] text-slate-500 mt-2 font-mono">
@@ -84,7 +84,7 @@ export const ProgressView: React.FC = () => {
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl border border-slate-800 bg-[#111B2E] shadow-xl">
+        <div className="p-5 rounded-2xl border border-slate-800 bg-[#20172f] shadow-xl">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-400">
             <span>Пробелы и исправления</span>
             <AlertTriangle className="w-4 h-4 text-amber-400" />
@@ -94,20 +94,20 @@ export const ProgressView: React.FC = () => {
             <span className="text-xs text-slate-400 font-mono">входной контроль</span>
           </div>
           <p className="text-[11px] text-emerald-400 mt-2 font-mono">
-            {resolvedGaps.length} успешно устранено
+            {resolvedGaps.length} предварительно устранено
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl border border-slate-800 bg-[#111B2E] shadow-xl">
+        <div className="p-5 rounded-2xl border border-slate-800 bg-[#20172f] shadow-xl">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-400">
-            <span>Учебный стрик</span>
+            <span>Дни с отчётами</span>
             <Flame className="w-4 h-4 text-orange-400" />
           </div>
           <div className="mt-2 flex items-baseline space-x-2">
             <span className="text-3xl font-extrabold font-mono text-orange-400">
-              {attempts.length > 0 ? "1 день" : "0 дней"}
+              {new Set(attempts.filter(a => a.submittedAt).map(a => new Date(a.submittedAt!).toLocaleDateString("ru-RU"))).size}
             </span>
-            <span className="text-xs text-slate-400 font-mono">подтвержд. активности</span>
+            <span className="text-xs text-slate-400 font-mono">дней активности</span>
           </div>
           <p className="text-[11px] text-slate-500 mt-2 font-mono">
             Учитывает только реальные загруженные отчёты
@@ -116,7 +116,7 @@ export const ProgressView: React.FC = () => {
       </div>
 
       {/* Completion vs Mastery Separation (Section 12.1 & 12.2) */}
-      <div className="p-6 rounded-2xl border border-slate-800 bg-[#111B2E] shadow-xl space-y-4">
+      <div className="p-6 rounded-2xl border border-slate-800 bg-[#20172f] shadow-xl space-y-4">
         <h3 className="text-sm font-bold text-slate-100 flex items-center space-x-2">
           <ShieldCheck className="w-4 h-4 text-cyan-400" />
           <span>Разделение статуса: Формальное завершение vs Доказанное владение</span>
@@ -144,7 +144,7 @@ export const ProgressView: React.FC = () => {
       </div>
 
       {/* Gaps Resolution History */}
-      <div className="rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl space-y-4">
+      <div className="rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <h3 className="text-sm font-bold text-slate-100 flex items-center space-x-2">
             <AlertTriangle className="w-4 h-4 text-amber-400" />
@@ -180,7 +180,7 @@ export const ProgressView: React.FC = () => {
                         : "bg-amber-950 text-amber-400 border border-amber-800"
                     }`}
                   >
-                    {gap.status === "resolved" ? "Устранено" : "Входной контроль"}
+                    {gap.status === "resolved" ? "Предварительно устранено" : "Входной контроль"}
                   </span>
                 </div>
               </div>

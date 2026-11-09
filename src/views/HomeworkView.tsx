@@ -25,13 +25,18 @@ import {
   submitHomeworkAnswer,
   verifyHomeworkItem,
   getCurrentUser,
+  getAllUsers,
   subscribeToDatabase,
+  syncDatabaseFromServer,
 } from "../services/storage";
 import { HomeworkItem, User } from "../types";
+
+const homeworkKey = (hw: HomeworkItem) => `${hw.userId || ''}:${hw.id}`;
 
 export const HomeworkView: React.FC = () => {
   const [currentUser, setUser] = useState<User>(getCurrentUser());
   const [homework, setHomework] = useState<HomeworkItem[]>(getHomeworkList());
+  const [selectedStudentId, setSelectedStudentId] = useState('');
   const [selectedLessonFilter, setSelectedLessonFilter] = useState<string>("all");
   
   // Independent answer state for EACH individual assignment
@@ -56,7 +61,7 @@ export const HomeworkView: React.FC = () => {
     const initialAnswers: Record<string, string> = {};
     homework.forEach((hw) => {
       if (hw.studentAnswer) {
-        initialAnswers[hw.id] = hw.studentAnswer;
+        initialAnswers[homeworkKey(hw)] = hw.studentAnswer;
       }
     });
     setAnswers((prev) => ({ ...initialAnswers, ...prev }));
@@ -64,24 +69,20 @@ export const HomeworkView: React.FC = () => {
 
   const isMentor = currentUser.role === "admin";
 
-  // Unique lessons with homework
-  const lessonIds = useMemo(() => {
-    const set = new Set<string>();
-    homework.forEach((h) => set.add(h.lessonId));
-    return Array.from(set);
-  }, [homework]);
-
-  // Filtered homework list
-  const filteredHomework = useMemo(() => {
-    if (selectedLessonFilter === "all") return homework;
-    return homework.filter((h) => h.lessonId === selectedLessonFilter);
-  }, [homework, selectedLessonFilter]);
+  // The mentor first chooses a student; the outline then follows the course hierarchy.
+  const studentHomework = isMentor ? homework.filter(h => h.userId === selectedStudentId) : homework;
+  const lessonIds = Array.from(new Set(studentHomework.map(h => h.lessonId))).sort();
+  const outline = Array.from(new Set(lessonIds.map(id => id.split('-')[0]))).map(moduleId => {
+    const topicIds = Array.from(new Set(lessonIds.filter(id => id.startsWith(moduleId + '-')).map(id => id.split('-').slice(0, 2).join('-'))));
+    return {moduleId, topics: topicIds.map(topicId => ({topicId, lessons:lessonIds.filter(id => id.startsWith(topicId + '-'))}))};
+  });
+  const filteredHomework = selectedLessonFilter === 'all' ? studentHomework : studentHomework.filter(h=>h.lessonId === selectedLessonFilter);
 
   // Metrics
-  const totalCount = homework.length;
-  const verifiedCount = homework.filter((h) => h.status === "verified").length;
-  const submittedCount = homework.filter((h) => h.status === "submitted").length;
-  const pendingCount = homework.filter((h) => h.status === "assigned" || !h.status).length;
+  const totalCount = studentHomework.length;
+  const verifiedCount = studentHomework.filter((h) => h.status === "verified").length;
+  const submittedCount = studentHomework.filter((h) => h.status === "submitted").length;
+  const pendingCount = studentHomework.filter((h) => h.status === "assigned" || !h.status).length;
 
   const showNotification = (id: string, text: string, type: "success" | "error" = "success") => {
     setNotificationMsg({ id, text, type });
@@ -91,42 +92,44 @@ export const HomeworkView: React.FC = () => {
   };
 
   // Submit answer for a single specific assignment
-  const handleSingleSubmit = (hwId: string) => {
-    const text = (answers[hwId] || "").trim();
+  const handleSingleSubmit = async (hw: HomeworkItem) => {
+    const hwId = hw.id, key = homeworkKey(hw);
+    const text = (answers[key] || "").trim();
     if (!text) {
-      showNotification(hwId, "Поле ответа не может быть пустым. Введите решение задачи.", "error");
+      showNotification(key, "Поле ответа не может быть пустым. Введите решение задачи.", "error");
       return;
     }
 
-    submitHomeworkAnswer(hwId, text, currentUser);
-    setEditingHwIds((prev) => ({ ...prev, [hwId]: false }));
-    showNotification(hwId, "Ответ на задание успешно отправлен на проверку ментору!");
+    const response = await fetch('/api/homework', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: hwId, answer: text})});
+    if (!response.ok) { showNotification(key, 'Не удалось сохранить ответ.', 'error'); return; }
+    await syncDatabaseFromServer();
+    setEditingHwIds((prev) => ({ ...prev, [key]: false }));
+    showNotification(key, "Ответ сохранён для входной проверки следующего урока.");
   };
 
   // Batch submit all answered assignments
-  const handleBatchSubmit = () => {
+  const handleBatchSubmit = async () => {
     let count = 0;
-    filteredHomework.forEach((hw) => {
-      const text = (answers[hw.id] || "").trim();
-      if (text && hw.status !== "verified") {
-        submitHomeworkAnswer(hw.id, text, currentUser);
-        setEditingHwIds((prev) => ({ ...prev, [hw.id]: false }));
-        count++;
-      }
-    });
-
-    if (count > 0) {
-      showNotification("global", `Успешно отправлено ответов: ${count}`);
-    } else {
-      showNotification("global", "Нет заполненных новых ответов для отправки.", "error");
+    for (const hw of filteredHomework) {
+      const text = (answers[homeworkKey(hw)] || '').trim();
+      if (!text || hw.status === 'verified' || hw.status === 'checked') continue;
+      const response = await fetch('/api/homework', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: hw.id, answer: text})});
+      if (!response.ok) { showNotification('global', `Не удалось сохранить ${hw.id}. Сохранено: ${count}.`, 'error'); await syncDatabaseFromServer(); return; }
+      count++;
     }
+    await syncDatabaseFromServer();
+    showNotification('global', count ? `Сохранено ответов: ${count}` : 'Нет заполненных ответов.', count ? 'success' : 'error');
   };
 
   // Mentor verification handler
-  const handleMentorVerify = (hwId: string, status: "verified" | "assigned") => {
-    const feedback = mentorFeedbacks[hwId] || "";
-    verifyHomeworkItem(hwId, feedback, status);
-    showNotification(hwId, status === "verified" ? "Задание успешно зачтено!" : "Задание возвращено курсанту на доработку.");
+  const handleMentorVerify = async (hw: HomeworkItem, status: 'verified' | 'assigned') => {
+    const key = homeworkKey(hw);
+    const feedback = (mentorFeedbacks[key] || '').trim();
+    if (!hw.userId || !feedback) { showNotification(key, 'Для проверки нужны владелец задания и комментарий.', 'error'); return; }
+    const response = await fetch('/api/mentor/homework', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({homeworkId: hw.id, userId: hw.userId, status: status === 'verified' ? 'verified' : 'needs_revision', feedback})});
+    if (!response.ok) { showNotification(key, 'Не удалось сохранить решение.', 'error'); return; }
+    await syncDatabaseFromServer();
+    showNotification(key, status === 'verified' ? 'Задание зачтено ментором.' : 'Задание возвращено на доработку.');
   };
 
   return (
@@ -153,13 +156,13 @@ export const HomeworkView: React.FC = () => {
 
         {/* Global actions */}
         <div className="flex items-center gap-3">
-          <button
+          {!isMentor && <button
             onClick={handleBatchSubmit}
             className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center space-x-2 shadow-lg shadow-cyan-500/20 transition-all active:scale-98"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Сохранить все заполненные</span>
-          </button>
+          </button>}
         </div>
       </div>
 
@@ -173,7 +176,7 @@ export const HomeworkView: React.FC = () => {
 
       {/* 4 Status Counters */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl border border-slate-800 bg-[#111B2E]">
+        <div className="p-4 rounded-2xl border border-slate-800 bg-[#20172f]">
           <span className="text-xs text-slate-400 uppercase font-semibold">Всего заданий</span>
           <div className="mt-1 text-2xl font-extrabold font-mono text-slate-100">{totalCount}</div>
         </div>
@@ -191,45 +194,20 @@ export const HomeworkView: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter by lesson */}
-      <div className="flex flex-wrap items-center gap-2 pb-2">
-        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5 mr-2">
-          <Filter className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Урок:</span>
-        </span>
-        <button
-          onClick={() => setSelectedLessonFilter("all")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all ${
-            selectedLessonFilter === "all"
-              ? "bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20"
-              : "bg-[#111B2E] border border-slate-800 text-slate-400 hover:text-slate-200"
-          }`}
-        >
-          Все уроки ({homework.length})
-        </button>
-        {lessonIds.map((lId) => {
-          const count = homework.filter((h) => h.lessonId === lId).length;
-          return (
-            <button
-              key={lId}
-              onClick={() => setSelectedLessonFilter(lId)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all ${
-                selectedLessonFilter === lId
-                  ? "bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20"
-                  : "bg-[#111B2E] border border-slate-800 text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              {lId} ({count})
-            </button>
-          );
-        })}
-      </div>
+      {isMentor && <label className="block rounded-xl border border-slate-700 bg-[#20172f] p-4 text-sm">Выберите ученика
+        <select aria-label="Выберите ученика" value={selectedStudentId} onChange={e=>{setSelectedStudentId(e.target.value);setSelectedLessonFilter('all');}} className="ml-3 rounded-lg border border-slate-600 bg-slate-900 p-2"><option value="">Выберите ученика</option>{getAllUsers().filter(u=>u.role==='student').map(u=><option key={u.id} value={u.id}>{u.displayName}</option>)}</select>
+      </label>}
+      {(!isMentor || selectedStudentId) && <nav aria-label="Оглавление домашних заданий" className="rounded-2xl border border-slate-700 bg-[#20172f] p-4">
+        <h2 className="mb-3 font-semibold">Оглавление заданий</h2>
+        <button onClick={()=>setSelectedLessonFilter('all')} className={`rounded-lg px-3 py-2 text-sm ${selectedLessonFilter==='all'?'bg-violet-500/30':'hover:bg-slate-800'}`}>Все задания ({studentHomework.length})</button>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{outline.map(group=><details key={group.moduleId} open className="rounded-lg border border-slate-700 p-2"><summary className="cursor-pointer font-medium">{group.moduleId}</summary>{group.topics.map(topic=><details key={topic.topicId} open className="ml-3 mt-2"><summary className="cursor-pointer text-sm text-slate-300">{topic.topicId}</summary>{topic.lessons.map(id=><button key={id} onClick={()=>setSelectedLessonFilter(id)} className={`ml-3 mt-1 block rounded px-2 py-1 text-sm ${selectedLessonFilter===id?'bg-violet-500/40':'hover:bg-slate-800'}`}>{id} · {studentHomework.filter(h=>h.lessonId===id).length}</button>)}</details>)}</details>)}</div>
+      </nav>}
 
       {/* List of assignments */}
       {filteredHomework.length === 0 ? (
-        <div className="rounded-2xl border border-slate-800 bg-[#111B2E] p-12 text-center space-y-3">
+        <div className="rounded-2xl border border-slate-800 bg-[#20172f] p-12 text-center space-y-3">
           <Clock className="w-10 h-10 text-slate-500 mx-auto" />
-          <h3 className="text-base font-bold text-slate-200">Домашние задания пока не назначены</h3>
+          <h3 className="text-base font-bold text-slate-200">{isMentor && !selectedStudentId ? "Выберите ученика" : "Домашние задания пока не назначены"}</h3>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
             Пройдите занятие в ChatGPT (например, M01-T01-U01) и импортируйте отчёт. Все назначенные задания автоматически появятся здесь.
           </p>
@@ -237,8 +215,9 @@ export const HomeworkView: React.FC = () => {
       ) : (
         <div className="space-y-6">
           {filteredHomework.map((hw, idx) => {
-            const isEditing = editingHwIds[hw.id] || !hw.studentAnswer;
-            const currentAnswer = answers[hw.id] ?? (hw.studentAnswer || "");
+            const key = homeworkKey(hw);
+            const isEditing = !isMentor && (editingHwIds[key] || !hw.studentAnswer);
+            const currentAnswer = answers[key] ?? (hw.studentAnswer || "");
 
             let statusBadge = (
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-amber-950 text-amber-400 border border-amber-800/80 flex items-center space-x-1">
@@ -247,7 +226,13 @@ export const HomeworkView: React.FC = () => {
               </span>
             );
 
-            if (hw.status === "verified") {
+            if (hw.status === "checked" || hw.status === "needs_revision" || hw.status === "not_submitted") {
+              statusBadge = (
+                <span className="px-2.5 py-0.5 rounded-full text-xs bg-cyan-950 text-cyan-300 border border-cyan-800">
+                  {hw.status === 'checked' ? 'Проверено ИИ' : hw.status === 'needs_revision' ? 'Нужна доработка' : 'Не представлено'} — самоотчёт
+                </span>
+              );
+            } else if (hw.status === "verified") {
               statusBadge = (
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800/80 flex items-center space-x-1">
                   <CheckCircle2 className="w-3 h-3" />
@@ -265,8 +250,8 @@ export const HomeworkView: React.FC = () => {
 
             return (
               <div
-                key={hw.id}
-                className="rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl space-y-5 transition-all hover:border-slate-700/80"
+                key={key}
+                className="rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl space-y-5 transition-all hover:border-slate-700/80"
               >
                 {/* Top Bar of the Assignment */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-800">
@@ -277,6 +262,7 @@ export const HomeworkView: React.FC = () => {
                     <span className="font-mono text-xs font-bold text-slate-300">
                       {hw.id}
                     </span>
+                    {isMentor && <span className="text-xs text-violet-300">{getAllUsers().find(user => user.id === hw.userId)?.displayName || hw.userId}</span>}
                     <span className="text-slate-500">•</span>
                     <span className="text-xs font-semibold text-slate-400">
                       Задание {idx + 1}
@@ -300,7 +286,7 @@ export const HomeworkView: React.FC = () => {
                 </div>
 
                 {/* Notification for this specific card */}
-                {notificationMsg?.id === hw.id && (
+                {notificationMsg?.id === key && (
                   <div className={`p-3 rounded-xl text-xs font-medium border ${
                     notificationMsg.type === "error"
                       ? "bg-rose-950/80 border-rose-800 text-rose-200"
@@ -327,11 +313,11 @@ export const HomeworkView: React.FC = () => {
                       <textarea
                         value={currentAnswer}
                         onChange={(e) =>
-                          setAnswers((prev) => ({ ...prev, [hw.id]: e.target.value }))
+                          setAnswers((prev) => ({ ...prev, [key]: e.target.value }))
                         }
                         rows={5}
                         placeholder={`Введите подробный ответ на Задание ${idx + 1}: расчёты, формулы, обоснования и выводы...`}
-                        className="w-full rounded-xl bg-[#090F1C] border border-slate-800 p-4 text-xs sm:text-sm text-slate-200 font-mono focus:outline-none focus:ring-1 focus:ring-cyan-500/50 leading-relaxed resize-y transition-all"
+                        className="w-full rounded-xl bg-[#110d1b] border border-slate-800 p-4 text-xs sm:text-sm text-slate-200 font-mono focus:outline-none focus:ring-1 focus:ring-cyan-500/50 leading-relaxed resize-y transition-all"
                       />
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-[11px] text-slate-400">
@@ -343,7 +329,7 @@ export const HomeworkView: React.FC = () => {
                           {hw.studentAnswer && (
                             <button
                               onClick={() =>
-                                setEditingHwIds((prev) => ({ ...prev, [hw.id]: false }))
+                                setEditingHwIds((prev) => ({ ...prev, [key]: false }))
                               }
                               className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all"
                             >
@@ -351,7 +337,7 @@ export const HomeworkView: React.FC = () => {
                             </button>
                           )}
                           <button
-                            onClick={() => handleSingleSubmit(hw.id)}
+                            onClick={() => handleSingleSubmit(hw)}
                             className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center space-x-1.5 shadow-lg shadow-cyan-500/20 transition-all active:scale-98"
                           >
                             <Send className="w-3.5 h-3.5" />
@@ -368,17 +354,17 @@ export const HomeworkView: React.FC = () => {
                         <span className="text-xs text-slate-400 font-mono">
                           Отправленное решение курсантом:
                         </span>
-                        <button
+                        {!isMentor && <button
                           onClick={() =>
-                            setEditingHwIds((prev) => ({ ...prev, [hw.id]: true }))
+                            setEditingHwIds((prev) => ({ ...prev, [key]: true }))
                           }
                           className="text-xs text-cyan-400 hover:text-cyan-300 font-bold flex items-center space-x-1"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                           <span>Редактировать ответ</span>
-                        </button>
+                        </button>}
                       </div>
-                      <p className="text-xs sm:text-sm text-slate-200 font-mono whitespace-pre-wrap leading-relaxed bg-[#090F1C] p-3.5 rounded-lg border border-slate-800/80">
+                      <p className="text-xs sm:text-sm text-slate-200 font-mono whitespace-pre-wrap leading-relaxed bg-[#110d1b] p-3.5 rounded-lg border border-slate-800/80">
                         {hw.studentAnswer}
                       </p>
                     </div>
@@ -410,23 +396,23 @@ export const HomeworkView: React.FC = () => {
                     </p>
                     <input
                       type="text"
-                      placeholder="Оставить примечание наставника (опционально)..."
-                      value={mentorFeedbacks[hw.id] ?? (hw.mentorFeedback || "")}
+                      placeholder="Укажите основание решения наставника..."
+                      value={mentorFeedbacks[key] ?? (hw.mentorFeedback || "")}
                       onChange={(e) =>
-                        setMentorFeedbacks((prev) => ({ ...prev, [hw.id]: e.target.value }))
+                        setMentorFeedbacks((prev) => ({ ...prev, [key]: e.target.value }))
                       }
-                      className="w-full rounded-lg bg-[#090F1C] border border-slate-800 p-2.5 text-xs text-slate-200 font-sans focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                      className="w-full rounded-lg bg-[#110d1b] border border-slate-800 p-2.5 text-xs text-slate-200 font-sans focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
                     />
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => handleMentorVerify(hw.id, "verified")}
+                        onClick={() => handleMentorVerify(hw, "verified")}
                         className="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center space-x-1 transition-all"
                       >
                         <Check className="w-3.5 h-3.5" />
                         <span>Отметить зачтённым</span>
                       </button>
                       <button
-                        onClick={() => handleMentorVerify(hw.id, "assigned")}
+                        onClick={() => handleMentorVerify(hw, "assigned")}
                         className="px-4 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs flex items-center space-x-1 transition-all"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />

@@ -214,9 +214,9 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
   }, [modules, topics, lessons, searchQuery, statusFilter]);
 
   // Save current lesson
-  const handleSaveLesson = (publishImmediate: boolean = false) => {
+  const handleSaveLesson = (publishImmediate: boolean = false, overrideStatus?: ContentStatus) => {
     if (!activeLesson) return;
-    const targetStatus = publishImmediate ? 'published' : editorStatus;
+    const targetStatus = overrideStatus || (publishImmediate ? 'published' : editorStatus);
     const updated = saveLesson(
       {
         ...activeLesson,
@@ -388,12 +388,16 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
     }
 
     const nextDb = commitImportPayload(payload, db, {
-      conflictMode,
+      conflictResolution: conflictMode,
       actorId: currentUser.id,
       actorName: currentUser.displayName,
     });
 
-    // Also add to library
+    // Preserve imported bytes, so a material added through the course editor can be downloaded later.
+    const importedBytes = new TextEncoder().encode(importRawText);
+    let binary = '';
+    for (let i = 0; i < importedBytes.length; i += 16384) binary += String.fromCharCode(...importedBytes.subarray(i, i + 16384));
+    const importedBase64 = btoa(binary);
     const sha = await computeSha256(importRawText);
     nextDb.libraryFiles.unshift({
       id: `lib-${Date.now()}`,
@@ -401,6 +405,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
       type: importFileName.endsWith('.json') ? 'json' : 'markdown',
       sizeBytes: new Blob([importRawText]).size,
       checksumSha256: sha,
+      contentBase64: importedBase64,
       uploadedAt: new Date().toISOString(),
       uploadedBy: currentUser.displayName,
       linkedEntity: payload.lessons?.[0]?.code || 'M01',
@@ -427,12 +432,13 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
       id: cleanCode,
       code: cleanCode,
       title: newModuleTitle.trim(),
-      description: newModuleDesc.trim() || 'Описание дисциплины',
+      shortDescription: newModuleDesc.trim() || 'Описание дисциплины',
+      introduction: newModuleDesc.trim() || 'Описание дисциплины',
+      topicsCount: 0,
+      publishedLessonsCount: 0,
       order: modules.length + 1,
       status: 'draft',
-      learningObjectives: [],
       prerequisites: [],
-      totalEstimatedHours: 40,
     };
     saveModule(newMod);
     setShowNewModuleModal(false);
@@ -462,6 +468,8 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
       order: topics.filter((t) => t.moduleId === newTopicModuleId).length + 1,
       status: 'draft',
       learningObjectives: objectivesList.length > 0 ? objectivesList : ['Освоение темы ' + cleanCode],
+      description: '',
+      skillsTaught: [],
     };
     saveTopic(newTop);
     setShowNewTopicModal(false);
@@ -509,6 +517,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
       status: 'draft',
       durationEstimateMinutes: Number(newLessonDuration) || 120,
       objectives: [newLessonTitle.trim()],
+      prerequisites: [],
       promptTemplate: defaultPrompt,
       relatedSkillIds: [],
     };
@@ -523,7 +532,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
   };
 
   return (
-    <div className={`p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 ${isFullscreen ? 'fixed inset-0 z-50 bg-[#090F1C] overflow-y-auto max-w-none' : ''}`}>
+    <div className={`p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 ${isFullscreen ? 'fixed inset-0 z-50 bg-[#110d1b] overflow-y-auto max-w-none' : ''}`}>
       {/* Top Header Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
@@ -584,7 +593,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
       {/* Main Grid: Left Tree & Right Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Pane: Course Tree (cols 4) */}
-        <div className="lg:col-span-4 rounded-2xl border border-slate-800 bg-[#111B2E] p-4 shadow-xl space-y-4">
+        <div className="lg:col-span-4 rounded-2xl border border-slate-800 bg-[#20172f] p-4 shadow-xl space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
             <div className="flex items-center space-x-2">
               <FolderTree className="w-4 h-4 text-cyan-400" />
@@ -875,7 +884,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
         <div className="lg:col-span-8 space-y-6">
           {selectedType === 'lesson' && activeLesson ? (
             /* Lesson Editor (Section 6) */
-            <div className="rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl space-y-6">
+            <div className="rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl space-y-6">
               {/* Lesson Meta Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
                 <div className="space-y-1">
@@ -1009,7 +1018,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
                       value={editorText}
                       onChange={(e) => setEditorText(e.target.value)}
                       rows={isFullscreen ? 28 : 18}
-                      className="w-full p-4 rounded-xl border border-slate-800 bg-[#0A101D] text-slate-200 font-mono text-xs leading-relaxed focus:outline-none focus:border-cyan-500 selection:bg-cyan-500 selection:text-slate-950 resize-y"
+                      className="w-full p-4 rounded-xl border border-slate-800 bg-[#140e20] text-slate-200 font-mono text-xs leading-relaxed focus:outline-none focus:border-cyan-500 selection:bg-cyan-500 selection:text-slate-950 resize-y"
                       placeholder="Текст учебного промпта..."
                     />
                   </div>
@@ -1018,7 +1027,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
                 {/* Markdown Preview */}
                 {(editorMode === 'preview' || editorMode === 'split') && (
                   <div
-                    className={`p-4 rounded-xl border border-slate-800 bg-[#0A101D] text-slate-200 text-xs overflow-y-auto ${
+                    className={`p-4 rounded-xl border border-slate-800 bg-[#140e20] text-slate-200 text-xs overflow-y-auto ${
                       editorMode === 'preview' ? 'col-span-2 h-[420px]' : 'h-[360px]'
                     }`}
                   >
@@ -1089,7 +1098,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
                       <button
                         onClick={() => {
                           setEditorStatus('draft');
-                          handleSaveLesson(false);
+                          handleSaveLesson(false, 'draft');
                         }}
                         className="px-4 py-2 rounded-xl border border-amber-800 bg-amber-950/40 hover:bg-amber-900/40 text-amber-300 text-xs font-semibold transition-colors"
                       >
@@ -1117,7 +1126,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
             </div>
           ) : selectedType === 'topic' && activeTopic ? (
             /* Topic Editor */
-            <div className="rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl space-y-5">
+            <div className="rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl space-y-5">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <div>
                   <span className="text-xs font-mono text-cyan-400 font-bold">{activeTopic.code}</span>
@@ -1179,7 +1188,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
             </div>
           ) : (
             /* Module Editor */
-            <div className="rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl space-y-5">
+            <div className="rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl space-y-5">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <div>
                   <span className="text-xs font-mono text-cyan-400 font-bold">{activeModule?.code}</span>
@@ -1241,7 +1250,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
       {/* ----------------- MODAL: IMPORT MATERIALS (Section 5) ----------------- */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-3xl rounded-2xl border border-slate-700 bg-[#111B2E] p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-3xl rounded-2xl border border-slate-700 bg-[#20172f] p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center space-x-2">
                 <Upload className="w-5 h-5 text-cyan-400" />
@@ -1407,7 +1416,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
       {/* ----------------- MODAL: VERSION HISTORY (Section 6.2) ----------------- */}
       {showHistoryModal && activeLesson && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-[#111B2E] p-6 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-[#20172f] p-6 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center space-x-2">
                 <History className="w-5 h-5 text-cyan-400" />
@@ -1476,7 +1485,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
       {/* ----------------- MODAL: VERSION COMPARE / DIFF (Section 6.1) ----------------- */}
       {showCompareModal && comparedVersion && activeLesson && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-4xl rounded-2xl border border-slate-700 bg-[#111B2E] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-4xl rounded-2xl border border-slate-700 bg-[#20172f] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center space-x-2">
                 <GitCompare className="w-5 h-5 text-cyan-400" />
@@ -1541,7 +1550,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
       {/* ----------------- MODAL: CREATE MODULE ----------------- */}
       {showNewModuleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-[#111B2E] p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-[#20172f] p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center space-x-2">
                 <Plus className="w-5 h-5 text-cyan-400" />
@@ -1608,7 +1617,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
       {/* ----------------- MODAL: CREATE TOPIC ----------------- */}
       {showNewTopicModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-[#111B2E] p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-[#20172f] p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center space-x-2">
                 <Plus className="w-5 h-5 text-indigo-400" />
@@ -1695,7 +1704,7 @@ export const AdminContentView: React.FC<AdminContentViewProps> = ({ navigate }) 
       {/* ----------------- MODAL: CREATE LESSON ----------------- */}
       {showNewLessonModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-[#111B2E] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-[#20172f] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center space-x-2">
                 <Plus className="w-5 h-5 text-emerald-400" />

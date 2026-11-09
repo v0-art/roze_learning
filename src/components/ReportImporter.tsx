@@ -19,7 +19,7 @@ import { StructuredReport } from "../types";
 
 interface ReportImporterProps {
   currentLessonId: string;
-  onReportConfirmed: (report: StructuredReport, rawText: string) => void;
+  onReportConfirmed: (report: StructuredReport, rawText: string) => Promise<void>;
 }
 
 export const ReportImporter: React.FC<ReportImporterProps> = ({ currentLessonId, onReportConfirmed }) => {
@@ -203,9 +203,9 @@ export const ReportImporter: React.FC<ReportImporterProps> = ({ currentLessonId,
     reader.readAsText(file);
   };
 
-  const handleFinalSubmit = () => {
+  const handleFinalSubmit = async () => {
     if (validation && validation.valid) {
-      onReportConfirmed(validation.report, validation.rawText);
+      try { await onReportConfirmed(validation.report, validation.rawText); } catch (err) { alert(err instanceof Error ? err.message : "Ошибка сохранения отчёта."); return; }
       setShowPreviewModal(false);
       setInputText("");
       setValidation(null);
@@ -213,7 +213,7 @@ export const ReportImporter: React.FC<ReportImporterProps> = ({ currentLessonId,
   };
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-[#111B2E] p-4 sm:p-6 shadow-xl">
+    <div className="rounded-xl border border-slate-800 bg-[#20172f] p-4 sm:p-6 shadow-xl">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-800/80">
         <div>
           <div className="flex items-center space-x-2">
@@ -259,7 +259,7 @@ export const ReportImporter: React.FC<ReportImporterProps> = ({ currentLessonId,
           }}
           placeholder="Вставьте сюда финальный JSON отчёт из ChatGPT..."
           rows={10}
-          className="w-full rounded-lg bg-[#090F1C] border border-slate-800 p-3.5 font-mono text-xs text-slate-200 leading-relaxed focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+          className="w-full rounded-lg bg-[#110d1b] border border-slate-800 p-3.5 font-mono text-xs text-slate-200 leading-relaxed focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
         />
       </div>
 
@@ -295,7 +295,7 @@ export const ReportImporter: React.FC<ReportImporterProps> = ({ currentLessonId,
 
       {showPreviewModal && validation && validation.valid && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-[#111B2E] p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-[#20172f] p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
               <div className="flex items-center space-x-2.5">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400" />
@@ -386,6 +386,11 @@ export const ReportImporter: React.FC<ReportImporterProps> = ({ currentLessonId,
                 </div>
               </div>
 
+              {validation.report.entryControl && <div className="p-3 rounded-xl bg-slate-900 text-xs text-slate-200">
+                <p className="font-semibold">Входной контроль предыдущего урока: самоотчёт</p>
+                {validation.report.entryControl.homeworkResults.map(h => <p key={h.homeworkId}>{h.homeworkId}: {h.status} — {h.feedback}</p>)}
+                {validation.report.entryControl.recheckResults.map(q => <p key={q.sourceGapId || `${q.sourceLessonId || ''}:${q.sourceQuestionId}`}>{q.sourceGapId || q.sourceQuestionId}: {q.status} — {q.evidence}</p>)}
+              </div>}
               <div className="p-3 rounded-lg bg-cyan-950/30 border border-cyan-800/40 text-[11px] text-cyan-300 flex items-start space-x-2">
                 <Info className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
                 <span>

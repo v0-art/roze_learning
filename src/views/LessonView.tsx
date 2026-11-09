@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   BookOpen,
   ArrowLeft,
@@ -22,7 +22,7 @@ import {
   getLessonAttemptsForUser,
   getKnowledgeGaps,
   getHomeworkList,
-  saveReportSubmission,
+  syncDatabaseFromServer,
   getCurrentUser,
   subscribeToDatabase,
 } from "../services/storage";
@@ -48,6 +48,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ lessonId, navigate }) =>
   const [gaps, setGaps] = useState(getKnowledgeGaps(getCurrentUser().id));
   const [homework, setHomework] = useState(getHomeworkList());
   const [activeTab, setActiveTab] = useState<"workspace" | "history">("workspace");
+  const snapshotId = useRef<string | null>(sessionStorage.getItem(`nexus-snapshot:${lessonId}`));
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
 
   useEffect(() => {
@@ -74,6 +75,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ lessonId, navigate }) =>
   // Find previous lesson report for carryover (e.g. U02 -> U01, U03 -> U02)
   const prevLessonCode = useMemo(() => {
     if (!lesson?.code) return null;
+    if (lesson.previousLessonId) return lesson.previousLessonId;
     const match = lesson.code.match(/^(.*-U)(\d+)$/);
     if (!match) return null;
     const prefix = match[1];
@@ -96,7 +98,8 @@ export const LessonView: React.FC<LessonViewProps> = ({ lessonId, navigate }) =>
       previousLessonReport: prevAttempt?.structuredReport || null,
       previousLessonId: prevLessonCode,
       unresolvedGaps: gaps.filter((g) => g.status === "needs-review"),
-      pendingHomework: homework.filter((h) => h.lessonId === prevLessonCode || h.status === "assigned" || h.status === "submitted"),
+      pendingHomework: homework.filter((h) => (h.lessonId === prevLessonCode || h.status === "assigned" || h.status === "submitted" || h.status === "needs_revision" || h.status === "not_submitted") && h.userId === currentUser.id),
+      mentorSpecialNotes: prevAttempt?.mentorFeedback ? [prevAttempt.mentorFeedback] : [],
     });
   }, [lesson, prevAttempt, prevLessonCode, gaps, homework]);
 
@@ -115,7 +118,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ lessonId, navigate }) =>
   }
 
   // Guard: if lesson is draft or archived and user is student, do not allow opening (Test 8)
-  if (lesson.status !== 'approved' && lesson.status !== 'published' && currentUser.role === 'student') {
+  if (lesson.status !== 'published' && currentUser.role === 'student') {
     return (
       <div className="max-w-md mx-auto my-24 p-8 rounded-2xl border border-amber-800 bg-amber-950/40 text-center space-y-4">
         <Clock className="w-12 h-12 text-amber-400 mx-auto" />
@@ -135,15 +138,19 @@ export const LessonView: React.FC<LessonViewProps> = ({ lessonId, navigate }) =>
 
   const latestAttempt = attempts[0] || null;
 
-  const handleReportConfirmed = (report: StructuredReport, rawText: string) => {
-    if (!assembledPrompt) return;
-    saveReportSubmission({
-      userId: currentUser.id,
-      lessonId: lesson.code,
-      report,
-      rawText,
-      promptSnapshot: assembledPrompt.fullPromptText,
-    });
+  const saveSnapshot = async () => {
+    if (!assembledPrompt) throw new Error('Промпт недоступен');
+    const response = await fetch('/api/snapshots', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({lessonId: lesson.code, prompt: assembledPrompt.fullPromptText})});
+    if (!response.ok) throw new Error('Не удалось сохранить снимок промпта.');
+    snapshotId.current = (await response.json()).id;
+    if (snapshotId.current) sessionStorage.setItem(`nexus-snapshot:${lessonId}`, snapshotId.current);
+  };
+  const handleReportConfirmed = async (_report: StructuredReport, rawText: string) => {
+    if (!snapshotId.current) throw new Error('Сначала скопируйте или скачайте промпт этого занятия.');
+    const response = await fetch('/api/reports', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({lessonId: lesson.code, rawText, snapshotId: snapshotId.current})});
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'Не удалось сохранить отчёт.');
+    await syncDatabaseFromServer();
     setSubmissionSuccess(true);
     setTimeout(() => setSubmissionSuccess(false), 5000);
   };
@@ -221,7 +228,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ lessonId, navigate }) =>
 
       {/* Lesson Objectives & Specs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="md:col-span-2 p-5 rounded-2xl border border-slate-800 bg-[#111B2E] shadow-xl">
+        <div className="md:col-span-2 p-5 rounded-2xl border border-slate-800 bg-[#20172f] shadow-xl">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center space-x-1.5">
             <BookOpen className="w-4 h-4 text-cyan-400" />
             <span>Цели и результаты обучения (Learning Objectives)</span>
@@ -236,7 +243,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ lessonId, navigate }) =>
           </ul>
         </div>
 
-        <div className="p-5 rounded-2xl border border-slate-800 bg-[#111B2E] shadow-xl flex flex-col justify-between space-y-3">
+        <div className="p-5 rounded-2xl border border-slate-800 bg-[#20172f] shadow-xl flex flex-col justify-between space-y-3">
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center space-x-1.5">
               <Clock className="w-4 h-4 text-cyan-400" />
@@ -253,7 +260,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ lessonId, navigate }) =>
               </div>
               <div className="flex justify-between py-1 text-slate-300">
                 <span>Протокол отчёта:</span>
-                <span className="font-mono text-slate-100">NEXUS JSON v1.0</span>
+                <span className="font-mono text-slate-100">JSON-отчёт v1.0</span>
               </div>
             </div>
           </div>
@@ -274,14 +281,14 @@ export const LessonView: React.FC<LessonViewProps> = ({ lessonId, navigate }) =>
       {activeTab === "workspace" ? (
         <div className="space-y-8">
           {/* Step 1: Prompt viewer */}
-          {assembledPrompt && <PromptViewer assembledPrompt={assembledPrompt} />}
+          {assembledPrompt && <PromptViewer assembledPrompt={assembledPrompt} onPrepare={saveSnapshot} />}
 
           {/* Step 3: Report importer */}
           <ReportImporter currentLessonId={lesson.code} onReportConfirmed={handleReportConfirmed} />
         </div>
       ) : (
         /* History of Attempts for this Lesson */
-        <div className="rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl space-y-4">
+        <div className="rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
             <h3 className="text-base font-bold text-slate-100 flex items-center space-x-2">
               <History className="w-4 h-4 text-cyan-400" />

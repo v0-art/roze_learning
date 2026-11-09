@@ -1,0 +1,2058 @@
+{
+  "schemaVersion": "1.0.0",
+  "graphId": "nexus-course-module-interdisciplinary",
+  "title": "Межпредметные связи NEXUS Academy на уровне дисциплин",
+  "locale": "ru-RU",
+  "dataStatus": "PROPOSED_FOR_MENTOR_REVIEW",
+  "sourceDocuments": [
+    {
+      "name": "platform_content_import_DRAFT.json",
+      "role": "Названия и ID 18 дисциплин, утверждённые заголовки тем М01"
+    },
+    {
+      "name": "pasporta_18_disciplin_v0_6.docx",
+      "role": "Проектные предварительные знания и межпредметные связи М01–М18"
+    }
+  ],
+  "semantics": {
+    "prerequisite": "Знания предыдущего модуля требуются для содержательного освоения части последующего. Не означает блокировку доступа к модулю.",
+    "application": "Знания источника непосредственно применяются или углубляются в целевом модуле.",
+    "complementary": "Содержательное сопоставление двух дисциплин; связь показывается без стрелки и не задаёт порядок освоения.",
+    "capstone-integration": "Вклад знания из модуля М01–М17 в проектирование и испытания комплексной системы М18.",
+    "overview": "Показывать при общем обзоре карты, без автоматической связи от М01 ко всем модулям.",
+    "focus": "По умолчанию скрывать, показывать при выборе модуля или включении режима «Все связи».",
+    "approvedStatus": "Все конкретные междисциплинарные связи пока проектные; требуется проверка главным ментором."
+  },
+  "graphUiRules": {
+    "defaultVisibleTier": [
+      "overview"
+    ],
+    "showOnNodeSelection": "Все связи выбранного узла обоих направлений, включая focus; остальные приглушить.",
+    "showAllMode": true,
+    "filterableRelations": [
+      "prerequisite",
+      "application",
+      "complementary",
+      "capstone-integration"
+    ],
+    "layout": "Три горизонтальных ряда по 6 модулей, как на приложенном скриншоте, с устойчивыми node positions либо ELK layered.",
+    "edges": "Сгруппировать исходящие и входящие в пучки, маршрутизировать вне карточек; индивидуальная подсветка по наведению.",
+    "accessPolicy": "Не разблокировать уроки по флагу module relation; доступ определяется опубликованными уроками, пререквизитами занятий и административной политикой.",
+    "colors": "Не использовать цвет как единственный индикатор типа ребра: подпись и тип линии обязательны."
+  },
+  "counts": {
+    "nodes": 18,
+    "edges": 97,
+    "byRelation": {
+      "prerequisite": 40,
+      "application": 36,
+      "complementary": 4,
+      "capstone-integration": 17
+    },
+    "byTier": {
+      "overview": 22,
+      "focus": 75
+    },
+    "mentionedInDraftPassports": 67,
+    "expertProposedExtensions": 30
+  },
+  "nodes": [
+    {
+      "id": "M01",
+      "code": "M01",
+      "title": "Информация, математика и основы вычислений",
+      "order": 1,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "approved-themes"
+    },
+    {
+      "id": "M02",
+      "code": "M02",
+      "title": "Электротехника, электроника и цифровая схемотехника",
+      "order": 2,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M03",
+      "code": "M03",
+      "title": "Теория электросвязи, сигналы, цифровая обработка и измерения",
+      "order": 3,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M04",
+      "code": "M04",
+      "title": "Коммутация каналов: ТЧ, ОЦК, ИКМ, E1, PDH",
+      "order": 4,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M05",
+      "code": "M05",
+      "title": "Транспортные сети: SDH, оптика, OTN, DWDM",
+      "order": 5,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M06",
+      "code": "M06",
+      "title": "Пакетные сети: OSI и TCP/IP, инкапсуляция",
+      "order": 6,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M07",
+      "code": "M07",
+      "title": "Сетевые протоколы и маршрутизация, QoS",
+      "order": 7,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M08",
+      "code": "M08",
+      "title": "Радиотехника и радиосвязь",
+      "order": 8,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M09",
+      "code": "M09",
+      "title": "Архитектура компьютера и операционные системы",
+      "order": 9,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M10",
+      "code": "M10",
+      "title": "Алгоритмы, программирование и автоматизация",
+      "order": 10,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M11",
+      "code": "M11",
+      "title": "Классическая и симметричная криптография",
+      "order": 11,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M12",
+      "code": "M12",
+      "title": "Хэширование, теория чисел и асимметричная криптография",
+      "order": 12,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M13",
+      "code": "M13",
+      "title": "Моделирование угроз, риски, организационная и правовая ИБ",
+      "order": 13,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M14",
+      "code": "M14",
+      "title": "Криптографическая защита каналов и сетевого взаимодействия",
+      "order": 14,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M15",
+      "code": "M15",
+      "title": "Программно-аппаратная защита вычислительных систем",
+      "order": 15,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M16",
+      "code": "M16",
+      "title": "Защита от утечки информации по техническим каналам",
+      "order": 16,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M17",
+      "code": "M17",
+      "title": "Сетевая безопасность, мониторинг и анализ защищённости",
+      "order": 17,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    },
+    {
+      "id": "M18",
+      "code": "M18",
+      "title": "Моделирование, проектирование и испытания защищённых систем связи",
+      "order": 18,
+      "publicationStatus": "curriculum-skeleton",
+      "contentApproval": "discipline-skeleton"
+    }
+  ],
+  "edges": [
+    {
+      "id": "M01__M02",
+      "source": "M01",
+      "target": "M02",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Двоичная арифметика и булева алгебра → логические элементы и цифровые схемы",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Двоичная арифметика и булева алгебра",
+          "targetApplication": "логические элементы и цифровые схемы"
+        },
+        {
+          "sourceKnowledge": "элементарная алгебра",
+          "targetApplication": "расчёты электрических цепей"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M01, M02).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M01__M03",
+      "source": "M01",
+      "target": "M03",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Функции, тригонометрия и степени → описание колебаний и сигналов",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Функции, тригонометрия и степени",
+          "targetApplication": "описание колебаний и сигналов"
+        },
+        {
+          "sourceKnowledge": "вероятность и измерения",
+          "targetApplication": "ошибки и шум"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M01, M03).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M01__M04",
+      "source": "M01",
+      "target": "M04",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Биты, байты и скорость передачи → расчёт ОЦК 64 кбит/с и цифровых потоков E1",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Биты, байты и скорость передачи",
+          "targetApplication": "расчёт ОЦК 64 кбит/с и цифровых потоков E1"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M01, M04).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M01__M06",
+      "source": "M01",
+      "target": "M06",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Представление данных и кодирование → структуры сообщений и инкапсуляция TCP/IP",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Представление данных и кодирование",
+          "targetApplication": "структуры сообщений и инкапсуляция TCP/IP"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M01, M06).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M01__M09",
+      "source": "M01",
+      "target": "M09",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Алгоритмы и бинарные представления → исполнение команд и работа памяти",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Алгоритмы и бинарные представления",
+          "targetApplication": "исполнение команд и работа памяти"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M01__M10",
+      "source": "M01",
+      "target": "M10",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Алгоритмы, логика и двоичные операции → условия, циклы и программная обработка данных",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Алгоритмы, логика и двоичные операции",
+          "targetApplication": "условия, циклы и программная обработка данных"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M01__M11",
+      "source": "M01",
+      "target": "M11",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "XOR и двоичная логика → операции симметричных шифров",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "XOR и двоичная логика",
+          "targetApplication": "операции симметричных шифров"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M01, M11).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M01__M12",
+      "source": "M01",
+      "target": "M12",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Числа, комбинаторика и вероятность → модульная арифметика, коллизии и ключевое пространство",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Числа, комбинаторика и вероятность",
+          "targetApplication": "модульная арифметика, коллизии и ключевое пространство"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M01, M12).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M01__M13",
+      "source": "M01",
+      "target": "M13",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Вероятность и моделирование → понятия рисков и оценка неопределённости",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Вероятность и моделирование",
+          "targetApplication": "понятия рисков и оценка неопределённости"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M01__M16",
+      "source": "M01",
+      "target": "M16",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Единицы, функции и основы измерений → интерпретация технических измерений утечки",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Единицы, функции и основы измерений",
+          "targetApplication": "интерпретация технических измерений утечки"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M02__M03",
+      "source": "M02",
+      "target": "M03",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Электрические цепи, фильтры и АЦП/ЦАП → формирование, преобразование и измерение сигналов",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Электрические цепи, фильтры и АЦП/ЦАП",
+          "targetApplication": "формирование, преобразование и измерение сигналов"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M02, M03).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M02__M04",
+      "source": "M02",
+      "target": "M04",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Тактирование и цифровая электроника → физическая реализация ИКМ и мультиплексоров",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Тактирование и цифровая электроника",
+          "targetApplication": "физическая реализация ИКМ и мультиплексоров"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M02__M05",
+      "source": "M02",
+      "target": "M05",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Электронные преобразователи и измерения → интерфейсы и аппаратура оптических трактов",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Электронные преобразователи и измерения",
+          "targetApplication": "интерфейсы и аппаратура оптических трактов"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M02__M08",
+      "source": "M02",
+      "target": "M08",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Усилители, фильтры и генераторы → радиопередающий и радиоприёмный тракты",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Усилители, фильтры и генераторы",
+          "targetApplication": "радиопередающий и радиоприёмный тракты"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M02, M08).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M02__M09",
+      "source": "M02",
+      "target": "M09",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Триггеры и регистры → устройство процессора и памяти",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Триггеры и регистры",
+          "targetApplication": "устройство процессора и памяти"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M02, M09).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M02__M15",
+      "source": "M02",
+      "target": "M15",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Цифровые устройства и схемотехника → аппаратная основа доверенной загрузки и защиты устройств",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Цифровые устройства и схемотехника",
+          "targetApplication": "аппаратная основа доверенной загрузки и защиты устройств"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M02__M16",
+      "source": "M02",
+      "target": "M16",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Электрические цепи, фильтры и наводки → проводные побочные каналы и инженерные меры защиты",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Электрические цепи, фильтры и наводки",
+          "targetApplication": "проводные побочные каналы и инженерные меры защиты"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M02, M16).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M03__M04",
+      "source": "M03",
+      "target": "M04",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Дискретизация, квантование и кодирование → ИКМ речевого сигнала и цифровые каналы",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Дискретизация, квантование и кодирование",
+          "targetApplication": "ИКМ речевого сигнала и цифровые каналы"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M03, M04).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M03__M05",
+      "source": "M03",
+      "target": "M05",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Спектр, помехи и измерение сигналов → оптические системы передачи и качество тракта",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Спектр, помехи и измерение сигналов",
+          "targetApplication": "оптические системы передачи и качество тракта"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M03, M05).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M03__M06",
+      "source": "M03",
+      "target": "M06",
+      "relation": "complementary",
+      "displayTier": "focus",
+      "label": "Физическая передача символов и сигналов → различение физического и пакетного уровней",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Физическая передача символов и сигналов",
+          "targetApplication": "различение физического и пакетного уровней"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "undirected"
+    },
+    {
+      "id": "M03__M08",
+      "source": "M03",
+      "target": "M08",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Модуляция, спектр и помехи → радиосвязь, демодуляция и оценка радиоканала",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Модуляция, спектр и помехи",
+          "targetApplication": "радиосвязь, демодуляция и оценка радиоканала"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M03, M08).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M03__M14",
+      "source": "M03",
+      "target": "M14",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Канальное кодирование и качество передачи → ограничения реальных защищаемых каналов связи",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Канальное кодирование и качество передачи",
+          "targetApplication": "ограничения реальных защищаемых каналов связи"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M03__M16",
+      "source": "M03",
+      "target": "M16",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Спектральный анализ, сигналы и измерения → обнаружение информативных побочных излучений",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Спектральный анализ, сигналы и измерения",
+          "targetApplication": "обнаружение информативных побочных излучений"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M03, M16).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M04__M05",
+      "source": "M04",
+      "target": "M05",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Временное мультиплексирование и PDH → SDH и развитие цифровых транспортных сетей",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Временное мультиплексирование и PDH",
+          "targetApplication": "SDH и развитие цифровых транспортных сетей"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M04, M05).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M04__M06",
+      "source": "M04",
+      "target": "M06",
+      "relation": "complementary",
+      "displayTier": "focus",
+      "label": "Соединения с коммутацией каналов → сравнение с пакетной коммутацией",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Соединения с коммутацией каналов",
+          "targetApplication": "сравнение с пакетной коммутацией"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "undirected"
+    },
+    {
+      "id": "M04__M14",
+      "source": "M04",
+      "target": "M14",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "E1, структура циклов и физические интерфейсы → канальные криптошлюзы и защита цифровых трактов",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "E1, структура циклов и физические интерфейсы",
+          "targetApplication": "канальные криптошлюзы и защита цифровых трактов"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M04, M14).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M05__M06",
+      "source": "M05",
+      "target": "M06",
+      "relation": "application",
+      "displayTier": "overview",
+      "label": "Оптические транспортные сети → перенос пакетного трафика по транспортной инфраструктуре",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Оптические транспортные сети",
+          "targetApplication": "перенос пакетного трафика по транспортной инфраструктуре"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M05, M06).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M05__M07",
+      "source": "M05",
+      "target": "M07",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Магистральная пропускная способность и резервирование → требования QoS и маршрутизации",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Магистральная пропускная способность и резервирование",
+          "targetApplication": "требования QoS и маршрутизации"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M05, M07).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M05__M08",
+      "source": "M05",
+      "target": "M08",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Транспортная магистраль → транзитный участок беспроводной и мобильной связи",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Транспортная магистраль",
+          "targetApplication": "транзитный участок беспроводной и мобильной связи"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M05, M08).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M05__M14",
+      "source": "M05",
+      "target": "M14",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Оптический транспорт и границы канала → выбор уровня криптографической защиты",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Оптический транспорт и границы канала",
+          "targetApplication": "выбор уровня криптографической защиты"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M05, M14).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M05__M17",
+      "source": "M05",
+      "target": "M17",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Транспортные отказоустойчивые сети → мониторинг инфраструктуры и выявление деградации",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Транспортные отказоустойчивые сети",
+          "targetApplication": "мониторинг инфраструктуры и выявление деградации"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M06__M07",
+      "source": "M06",
+      "target": "M07",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Модели OSI/TCP-IP и инкапсуляция → адресация, маршрутизация и QoS",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Модели OSI/TCP-IP и инкапсуляция",
+          "targetApplication": "адресация, маршрутизация и QoS"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M06, M07).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M06__M08",
+      "source": "M06",
+      "target": "M08",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Кадры и пакеты → обмен данными поверх беспроводных каналов",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Кадры и пакеты",
+          "targetApplication": "обмен данными поверх беспроводных каналов"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M06__M09",
+      "source": "M06",
+      "target": "M09",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "TCP/IP, сокеты и интерфейсы → сетевой стек операционной системы",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "TCP/IP, сокеты и интерфейсы",
+          "targetApplication": "сетевой стек операционной системы"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M06, M09).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M06__M10",
+      "source": "M06",
+      "target": "M10",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Пакеты и протоколы → программная работа с сетевыми соединениями",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Пакеты и протоколы",
+          "targetApplication": "программная работа с сетевыми соединениями"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M06__M13",
+      "source": "M06",
+      "target": "M13",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Точки взаимодействия протоколов → поверхность атак и моделирование угроз",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Точки взаимодействия протоколов",
+          "targetApplication": "поверхность атак и моделирование угроз"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M06__M14",
+      "source": "M06",
+      "target": "M14",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Сетевые уровни и инкапсуляция → корректное расположение TLS, IPsec и MACsec",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Сетевые уровни и инкапсуляция",
+          "targetApplication": "корректное расположение TLS, IPsec и MACsec"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M06, M14).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M06__M17",
+      "source": "M06",
+      "target": "M17",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Пакетная архитектура и протоколы → анализ трафика, правила фильтрации и IDS/IPS",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Пакетная архитектура и протоколы",
+          "targetApplication": "анализ трафика, правила фильтрации и IDS/IPS"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M07__M08",
+      "source": "M07",
+      "target": "M08",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Сетевое взаимодействие и QoS → Wi-Fi и сетевые функции мобильной связи",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Сетевое взаимодействие и QoS",
+          "targetApplication": "Wi-Fi и сетевые функции мобильной связи"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M07, M08).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M07__M09",
+      "source": "M07",
+      "target": "M09",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "IP-адресация, транспортные протоколы и службы → настройка сетевого стека ОС",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "IP-адресация, транспортные протоколы и службы",
+          "targetApplication": "настройка сетевого стека ОС"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M07, M09).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M07__M10",
+      "source": "M07",
+      "target": "M10",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Сокеты и сетевые сервисы → сетевые программы и автоматизация протоколов",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Сокеты и сетевые сервисы",
+          "targetApplication": "сетевые программы и автоматизация протоколов"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M07, M10).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M07__M13",
+      "source": "M07",
+      "target": "M13",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Маршруты и сетевые сервисы → сценарии нарушителя и риски сетевой архитектуры",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Маршруты и сетевые сервисы",
+          "targetApplication": "сценарии нарушителя и риски сетевой архитектуры"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M07__M14",
+      "source": "M07",
+      "target": "M14",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Транспортные протоколы и маршрутизация → VPN, TLS, IPsec и защищённые сетевые маршруты",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Транспортные протоколы и маршрутизация",
+          "targetApplication": "VPN, TLS, IPsec и защищённые сетевые маршруты"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M07, M14).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M07__M15",
+      "source": "M07",
+      "target": "M15",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Сетевой доступ и идентификация узлов → NAC и защита вычислительных систем в сети",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Сетевой доступ и идентификация узлов",
+          "targetApplication": "NAC и защита вычислительных систем в сети"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M07__M17",
+      "source": "M07",
+      "target": "M17",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Маршрутизация, протоколы и QoS → межсетевые экраны, IDS/IPS и анализ сетевой защищённости",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Маршрутизация, протоколы и QoS",
+          "targetApplication": "межсетевые экраны, IDS/IPS и анализ сетевой защищённости"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M07, M17).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M08__M13",
+      "source": "M08",
+      "target": "M13",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Беспроводные интерфейсы и эфирная среда → угрозы и ограничения модели нарушителя",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Беспроводные интерфейсы и эфирная среда",
+          "targetApplication": "угрозы и ограничения модели нарушителя"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M08__M14",
+      "source": "M08",
+      "target": "M14",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Радиоканалы как среда передачи → наложение защищённых сетевых протоколов",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Радиоканалы как среда передачи",
+          "targetApplication": "наложение защищённых сетевых протоколов"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M08__M16",
+      "source": "M08",
+      "target": "M16",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Радиопередающий и радиоприёмный тракт → исследование электромагнитных каналов утечки",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Радиопередающий и радиоприёмный тракт",
+          "targetApplication": "исследование электромагнитных каналов утечки"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M08, M16).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M08__M17",
+      "source": "M08",
+      "target": "M17",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Беспроводные сетевые интерфейсы → аудит безопасности и мониторинг Wi-Fi",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Беспроводные сетевые интерфейсы",
+          "targetApplication": "аудит безопасности и мониторинг Wi-Fi"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M09__M10",
+      "source": "M09",
+      "target": "M10",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Операционная система, процессы и файлы → выполнение программ и автоматизация",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Операционная система, процессы и файлы",
+          "targetApplication": "выполнение программ и автоматизация"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M09, M10).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M09__M11",
+      "source": "M09",
+      "target": "M11",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Память и исполнение программ → реализация и эксплуатация программных криптосредств",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Память и исполнение программ",
+          "targetApplication": "реализация и эксплуатация программных криптосредств"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M09__M12",
+      "source": "M09",
+      "target": "M12",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Файлы, хранение и ОС → хранение сертификатов и ключевого материала",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Файлы, хранение и ОС",
+          "targetApplication": "хранение сертификатов и ключевого материала"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M09__M13",
+      "source": "M09",
+      "target": "M13",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Учётные записи, процессы и службы → модель угроз вычислительного узла",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Учётные записи, процессы и службы",
+          "targetApplication": "модель угроз вычислительного узла"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M09__M14",
+      "source": "M09",
+      "target": "M14",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Сетевой стек и системные интерфейсы → размещение и конфигурирование VPN и TLS",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Сетевой стек и системные интерфейсы",
+          "targetApplication": "размещение и конфигурирование VPN и TLS"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M09__M15",
+      "source": "M09",
+      "target": "M15",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Архитектура ОС, UEFI и TPM → доверенная загрузка и контроль доступа к хосту",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Архитектура ОС, UEFI и TPM",
+          "targetApplication": "доверенная загрузка и контроль доступа к хосту"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M09, M15).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M09__M16",
+      "source": "M09",
+      "target": "M16",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Физическая архитектура вычислителя → определение источников технических излучений",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Физическая архитектура вычислителя",
+          "targetApplication": "определение источников технических излучений"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M09, M16).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M09__M17",
+      "source": "M09",
+      "target": "M17",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Журналы событий, сетевой стек и сервисы → сбор телеметрии, EDR и SIEM",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Журналы событий, сетевой стек и сервисы",
+          "targetApplication": "сбор телеметрии, EDR и SIEM"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M09, M17).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M10__M11",
+      "source": "M10",
+      "target": "M11",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Побитовые операции и программы → демонстрации шифрования и режимов работы",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Побитовые операции и программы",
+          "targetApplication": "демонстрации шифрования и режимов работы"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M10, M11).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M10__M12",
+      "source": "M10",
+      "target": "M12",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Алгоритмы и целочисленные операции → учебная реализация модульной арифметики и хэширования",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Алгоритмы и целочисленные операции",
+          "targetApplication": "учебная реализация модульной арифметики и хэширования"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M10, M12).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M10__M13",
+      "source": "M10",
+      "target": "M13",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Алгоритмические модели → формализация сценариев и систематизация угроз",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Алгоритмические модели",
+          "targetApplication": "формализация сценариев и систематизация угроз"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M10__M14",
+      "source": "M10",
+      "target": "M14",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Программная автоматизация → конфигурация и тестирование защищённых туннелей",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Программная автоматизация",
+          "targetApplication": "конфигурация и тестирование защищённых туннелей"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M10__M15",
+      "source": "M10",
+      "target": "M15",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Сценарии и автоматизация → инвентаризация и проверка настроек защиты хоста",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Сценарии и автоматизация",
+          "targetApplication": "инвентаризация и проверка настроек защиты хоста"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M10__M17",
+      "source": "M10",
+      "target": "M17",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Парсинг журналов, скрипты и автоматизация → сбор событий и автоматизация анализа защищённости",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Парсинг журналов, скрипты и автоматизация",
+          "targetApplication": "сбор событий и автоматизация анализа защищённости"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M10, M17).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M11__M12",
+      "source": "M11",
+      "target": "M12",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Симметричное шифрование, режимы и аутентификация → сопоставление с хэшами, HMAC и асимметричными механизмами",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Симметричное шифрование, режимы и аутентификация",
+          "targetApplication": "сопоставление с хэшами, HMAC и асимметричными механизмами"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M11, M12).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M11__M13",
+      "source": "M11",
+      "target": "M13",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Возможности и ограничения шифрования → выбор мер против угроз конфиденциальности",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Возможности и ограничения шифрования",
+          "targetApplication": "выбор мер против угроз конфиденциальности"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M11__M14",
+      "source": "M11",
+      "target": "M14",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Симметричные шифры и режимы работы → защита E1, VPN и сетевого трафика",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Симметричные шифры и режимы работы",
+          "targetApplication": "защита E1, VPN и сетевого трафика"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M11, M14).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M11__M15",
+      "source": "M11",
+      "target": "M15",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Защита данных при хранении → шифрование накопителей и секретов хоста",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Защита данных при хранении",
+          "targetApplication": "шифрование накопителей и секретов хоста"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M11, M15).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M11__M17",
+      "source": "M11",
+      "target": "M17",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Криптографические ограничения анализа трафика → корректная организация мониторинга зашифрованных соединений",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Криптографические ограничения анализа трафика",
+          "targetApplication": "корректная организация мониторинга зашифрованных соединений"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M12__M13",
+      "source": "M12",
+      "target": "M13",
+      "relation": "application",
+      "displayTier": "overview",
+      "label": "Сертификаты, подписи и модели доверия → угрозы аутентификации и доверия к субъектам",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Сертификаты, подписи и модели доверия",
+          "targetApplication": "угрозы аутентификации и доверия к субъектам"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M12, M13).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M12__M14",
+      "source": "M12",
+      "target": "M14",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Обмен ключами, PKI и цифровая подпись → TLS, IPsec/IKE и аутентификация сетевых узлов",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Обмен ключами, PKI и цифровая подпись",
+          "targetApplication": "TLS, IPsec/IKE и аутентификация сетевых узлов"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M12, M14).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M12__M15",
+      "source": "M12",
+      "target": "M15",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Хэши, подписи и цепочки доверия → контроль целостности и безопасная загрузка",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Хэши, подписи и цепочки доверия",
+          "targetApplication": "контроль целостности и безопасная загрузка"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M12, M15).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M12__M17",
+      "source": "M12",
+      "target": "M17",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "PKI и аутентификация сервисов → проверка сертификатов и контроль защищённых соединений",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "PKI и аутентификация сервисов",
+          "targetApplication": "проверка сертификатов и контроль защищённых соединений"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M12, M17).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M13__M14",
+      "source": "M13",
+      "target": "M14",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Модели угроз и требования к защите → выбор средств защиты каналов и сетевого взаимодействия",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Модели угроз и требования к защите",
+          "targetApplication": "выбор средств защиты каналов и сетевого взаимодействия"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M13, M14).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M13__M15",
+      "source": "M13",
+      "target": "M15",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Угрозы и требования безопасности → выбор механизмов защиты хостов",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Угрозы и требования безопасности",
+          "targetApplication": "выбор механизмов защиты хостов"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M13, M15).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M13__M16",
+      "source": "M13",
+      "target": "M16",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Модели нарушителя и требования к защите → выбор мер и испытаний против технических утечек",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Модели нарушителя и требования к защите",
+          "targetApplication": "выбор мер и испытаний против технических утечек"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M13, M16).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M13__M17",
+      "source": "M13",
+      "target": "M17",
+      "relation": "prerequisite",
+      "displayTier": "focus",
+      "label": "Модели угроз и риск-ориентированный контроль → политика сетевой защиты и мониторинга",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Модели угроз и риск-ориентированный контроль",
+          "targetApplication": "политика сетевой защиты и мониторинга"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M13, M17).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M14__M15",
+      "source": "M14",
+      "target": "M15",
+      "relation": "complementary",
+      "displayTier": "focus",
+      "label": "Криптографическая защита трафика → доверие к конечным узлам и хранению ключей",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Криптографическая защита трафика",
+          "targetApplication": "доверие к конечным узлам и хранению ключей"
+        }
+      ],
+      "evidenceStatus": "expert-proposed-extension",
+      "evidenceNote": "Предлагаемая междисциплинарная связь на основании содержания модулей; требуется содержательная проверка ментором.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "undirected"
+    },
+    {
+      "id": "M14__M17",
+      "source": "M14",
+      "target": "M17",
+      "relation": "prerequisite",
+      "displayTier": "overview",
+      "label": "Защищённые туннели и криптомаршрутизаторы → контроль сетевого доступа и видимости трафика",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Защищённые туннели и криптомаршрутизаторы",
+          "targetApplication": "контроль сетевого доступа и видимости трафика"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M14, M17).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M15__M16",
+      "source": "M15",
+      "target": "M16",
+      "relation": "complementary",
+      "displayTier": "focus",
+      "label": "Аппаратные средства защиты вычислителя → учёт побочных физических каналов устройства",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Аппаратные средства защиты вычислителя",
+          "targetApplication": "учёт побочных физических каналов устройства"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M15, M16).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "undirected"
+    },
+    {
+      "id": "M15__M17",
+      "source": "M15",
+      "target": "M17",
+      "relation": "application",
+      "displayTier": "focus",
+      "label": "Средства защиты хоста и EDR → корреляция хостовых и сетевых событий",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Средства защиты хоста и EDR",
+          "targetApplication": "корреляция хостовых и сетевых событий"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Связь упоминается в проектных паспортах дисциплин 0.6 (модули M15, M17).",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M01__M18",
+      "source": "M01",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "focus",
+      "label": "Математические и вычислительные основы → общие расчёты и обоснование модели защищённой системы",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Математические и вычислительные основы",
+          "targetApplication": "общие расчёты и обоснование модели защищённой системы"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M02__M18",
+      "source": "M02",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "focus",
+      "label": "Электронные устройства и измерения → физическая и аппаратная часть инженерного проекта",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Электронные устройства и измерения",
+          "targetApplication": "физическая и аппаратная часть инженерного проекта"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M03__M18",
+      "source": "M03",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "focus",
+      "label": "Модели сигналов и методы измерения → испытания и оценка качества каналов связи",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Модели сигналов и методы измерения",
+          "targetApplication": "испытания и оценка качества каналов связи"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M04__M18",
+      "source": "M04",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "focus",
+      "label": "Цифровые каналы E1/PDH и синхронизация → проектирование и испытание цифровых трактов",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Цифровые каналы E1/PDH и синхронизация",
+          "targetApplication": "проектирование и испытание цифровых трактов"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M05__M18",
+      "source": "M05",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "focus",
+      "label": "Оптический транспорт и резервирование → выбор транспортной инфраструктуры проекта",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Оптический транспорт и резервирование",
+          "targetApplication": "выбор транспортной инфраструктуры проекта"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M06__M18",
+      "source": "M06",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "focus",
+      "label": "Пакетная архитектура и инкапсуляция → модель сетевого обмена защищаемой системы",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Пакетная архитектура и инкапсуляция",
+          "targetApplication": "модель сетевого обмена защищаемой системы"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M07__M18",
+      "source": "M07",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "focus",
+      "label": "Маршрутизация, QoS и сетевые протоколы → проект сетевой топологии и доступности",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Маршрутизация, QoS и сетевые протоколы",
+          "targetApplication": "проект сетевой топологии и доступности"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M08__M18",
+      "source": "M08",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "focus",
+      "label": "Радиоканалы и беспроводные сети → проектирование и испытания радиочасти",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Радиоканалы и беспроводные сети",
+          "targetApplication": "проектирование и испытания радиочасти"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M09__M18",
+      "source": "M09",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "focus",
+      "label": "Операционные системы и архитектура узлов → состав оборудования и программная среда стенда",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Операционные системы и архитектура узлов",
+          "targetApplication": "состав оборудования и программная среда стенда"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M10__M18",
+      "source": "M10",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "focus",
+      "label": "Автоматизация, скрипты и модели → воспроизводимые испытания и обработка результатов",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Автоматизация, скрипты и модели",
+          "targetApplication": "воспроизводимые испытания и обработка результатов"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M11__M18",
+      "source": "M11",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "focus",
+      "label": "Симметричные криптографические механизмы → выбор и анализ защиты конфиденциальности",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Симметричные криптографические механизмы",
+          "targetApplication": "выбор и анализ защиты конфиденциальности"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M12__M18",
+      "source": "M12",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "focus",
+      "label": "Хэши, подписи и PKI → доверие, целостность и управление ключами",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Хэши, подписи и PKI",
+          "targetApplication": "доверие, целостность и управление ключами"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M13__M18",
+      "source": "M13",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "focus",
+      "label": "Моделирование угроз и требования ИБ → обоснование защитных мер и критериев испытаний",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Моделирование угроз и требования ИБ",
+          "targetApplication": "обоснование защитных мер и критериев испытаний"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M14__M18",
+      "source": "M14",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "overview",
+      "label": "Сетевая и канальная криптографическая защита → защищённая архитектура системы связи",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Сетевая и канальная криптографическая защита",
+          "targetApplication": "защищённая архитектура системы связи"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M15__M18",
+      "source": "M15",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "overview",
+      "label": "Защита вычислительных узлов → защищённые серверы и рабочие станции",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Защита вычислительных узлов",
+          "targetApplication": "защищённые серверы и рабочие станции"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M16__M18",
+      "source": "M16",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "overview",
+      "label": "Технические каналы утечки и противодействие → специальные измерения и защита физической инфраструктуры",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Технические каналы утечки и противодействие",
+          "targetApplication": "специальные измерения и защита физической инфраструктуры"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    },
+    {
+      "id": "M17__M18",
+      "source": "M17",
+      "target": "M18",
+      "relation": "capstone-integration",
+      "displayTier": "overview",
+      "label": "Мониторинг и анализ защищённости → наблюдаемость, проверка и оценка эффективности защитных мер",
+      "knowledgeTransfers": [
+        {
+          "sourceKnowledge": "Мониторинг и анализ защищённости",
+          "targetApplication": "наблюдаемость, проверка и оценка эффективности защитных мер"
+        }
+      ],
+      "evidenceStatus": "mentioned-in-passport-v0.6",
+      "evidenceNote": "Паспорт М18: предварительные знания — все дисциплины М01–М17.",
+      "approvalStatus": "proposed",
+      "isAccessGate": false,
+      "directionality": "source-to-target"
+    }
+  ]
+}

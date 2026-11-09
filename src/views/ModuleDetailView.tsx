@@ -73,7 +73,7 @@ export const ModuleDetailView: React.FC<ModuleDetailViewProps> = ({ moduleId, na
 
       {/* Why it matters & What is studied */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div className="p-6 rounded-2xl border border-slate-800 bg-[#111B2E] shadow-xl space-y-2">
+        <div className="p-6 rounded-2xl border border-slate-800 bg-[#20172f] shadow-xl space-y-2">
           <div className="flex items-center space-x-2 text-xs font-semibold uppercase tracking-wider text-cyan-400">
             <Sparkles className="w-4 h-4" />
             <span>Зачем это нужно инженеру (Why It Matters)</span>
@@ -83,7 +83,7 @@ export const ModuleDetailView: React.FC<ModuleDetailViewProps> = ({ moduleId, na
           </p>
         </div>
 
-        <div className="p-6 rounded-2xl border border-slate-800 bg-[#111B2E] shadow-xl space-y-2">
+        <div className="p-6 rounded-2xl border border-slate-800 bg-[#20172f] shadow-xl space-y-2">
           <div className="flex items-center space-x-2 text-xs font-semibold uppercase tracking-wider text-violet-400">
             <BookOpen className="w-4 h-4" />
             <span>Что изучается (What Is Studied)</span>
@@ -112,7 +112,7 @@ export const ModuleDetailView: React.FC<ModuleDetailViewProps> = ({ moduleId, na
             return (
               <div
                 key={topic.id}
-                className="rounded-2xl border border-slate-800 bg-[#111B2E] p-5 shadow-xl space-y-4 hover:border-slate-700 transition-colors"
+                className="rounded-2xl border border-slate-800 bg-[#20172f] p-5 shadow-xl space-y-4 hover:border-slate-700 transition-colors"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>

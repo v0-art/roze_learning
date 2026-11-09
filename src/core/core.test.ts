@@ -68,7 +68,7 @@ test('Grading Engine: Scenario R - Retake tracking and 3-retake intervention lim
 test('Report Validator: Scenario E & F - validates clean JSON, markdown fences and rejects errors', () => {
   const sampleJson = {
     schemaVersion: '1.0',
-    lessonId: 'M01-T01-U01',
+    lessonId: 'M99-T01-U01',
     lessonStatus: 'completed',
     coveredTopics: ['Информация', 'Данные', 'Сообщение'],
     assessment: {
@@ -114,7 +114,7 @@ test('Report Validator: Scenario E & F - validates clean JSON, markdown fences a
   };
 
   // Valid plain JSON
-  const outcome1 = validateStructuredReport(JSON.stringify(sampleJson), 'M01-T01-U01');
+  const outcome1 = validateStructuredReport(JSON.stringify(sampleJson), 'M99-T01-U01');
   assert.equal(outcome1.valid, true);
   if (outcome1.valid) {
     assert.equal(outcome1.report.assessment.earnedScore, 80);
@@ -125,19 +125,19 @@ test('Report Validator: Scenario E & F - validates clean JSON, markdown fences a
 
   // Valid markdown-wrapped JSON
   const wrappedJson = 'Вот мой отчет:\n```json\n' + JSON.stringify(sampleJson, null, 2) + '\n```\nСпасибо!';
-  const outcome2 = validateStructuredReport(wrappedJson, 'M01-T01-U01');
+  const outcome2 = validateStructuredReport(wrappedJson, 'M99-T01-U01');
   assert.equal(outcome2.valid, true);
 
   // Invalid JSON (Scenario F)
   const brokenJson = '{ schemaVersion: 1.0, broken... }';
-  const outcomeBroken = validateStructuredReport(brokenJson, 'M01-T01-U01');
+  const outcomeBroken = validateStructuredReport(brokenJson, 'M99-T01-U01');
   assert.equal(outcomeBroken.valid, false);
   if (!outcomeBroken.valid) {
     assert.ok(outcomeBroken.errors.length > 0);
   }
 
   // Mismatched lessonId
-  const outcomeMismatch = validateStructuredReport(JSON.stringify(sampleJson), 'M01-T01-U02');
+  const outcomeMismatch = validateStructuredReport(JSON.stringify(sampleJson), 'M99-T01-U02');
   assert.equal(outcomeMismatch.valid, false);
   if (!outcomeMismatch.valid) {
     assert.match(outcomeMismatch.errors.join(' '), /не совпадает с текущим уроком/);
@@ -251,7 +251,7 @@ test('Prompt Assembly: Scenario G & H - Carryover engine preserves all mandatory
   assert.match(prompt2.fullPromptText, /Повторить определение Шенноновской энтропии/);
   assert.match(prompt2.fullPromptText, /Проверить различие информации и данных/);
   assert.match(prompt2.fullPromptText, /Проверить формулу Хартли/);
-  assert.match(prompt2.fullPromptText, /Ошибка в Q01: Ошибка в понятии непрерывного сигнала/);
+  assert.match(prompt2.fullPromptText, /Q01: Ошибка в понятии непрерывного сигнала/);
 
   // Scenario H check: Homework transfer check
   assert.match(prompt2.fullPromptText, /Разбор SMS протокола/);

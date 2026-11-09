@@ -13,8 +13,8 @@ import {
   ExamTicketItem,
   ImportDiffRecord,
   ImportSummaryResult,
-  DatabaseState,
 } from '../types';
+import type { DatabaseState } from '../services/storage';
 
 // Simple fast SHA-256 equivalent in browser / node
 export async function computeSha256(text: string): Promise<string> {
@@ -372,7 +372,7 @@ export function commitImportPayload(
       if (!lessonsMap.has(l.id)) {
         lessonsMap.set(l.id, {
           ...l,
-          status: l.status || 'draft',
+          status: 'draft',
           version: l.version || '1.0',
           updatedAt: now,
         });
@@ -383,8 +383,8 @@ export function commitImportPayload(
           versionHistory.unshift({
             version: ex.version || '1.0',
             promptText: ex.promptTemplate,
-            authorId: options.actorId,
-            authorName: options.actorName,
+            authorId: options.actorId || 'admin-mentor',
+            authorName: options.actorName || 'Главный ментор',
             changelog: 'Замена из импортированного файла',
             createdAt: now,
             status: ex.status,
@@ -393,6 +393,7 @@ export function commitImportPayload(
         lessonsMap.set(l.id, {
           ...ex,
           ...l,
+          status: ex.status === 'published' && ex.promptTemplate === l.promptTemplate ? 'published' : 'draft',
           versionHistory,
           updatedAt: now,
         });
@@ -438,8 +439,8 @@ export function commitImportPayload(
   // Audit log entry
   next.auditLogs.unshift({
     id: `audit-${Date.now()}`,
-    actorId: options.actorId,
-    actorName: options.actorName,
+    actorId: options.actorId || 'admin-mentor',
+    actorName: options.actorName || 'Главный ментор',
     action: 'IMPORT_CONTENT_COMMIT',
     targetType: 'CURRICULUM',
     targetId: 'MULTIPLE_ENTITIES',
@@ -477,9 +478,9 @@ export function exportLessonToMarkdown(lesson: LessonItem): string {
 
 export function parseLessonMarkdown(content: string, filename: string = 'lesson.md'): LessonItem {
   const meta = parseLessonIdFromFilenameOrContent(filename, content);
-  const code = meta.lessonCode || 'M01-T01-U01';
-  const moduleId = meta.moduleId || code.split('-')[0] || 'M01';
-  const topicId = meta.topicId || code.split('-').slice(0, 2).join('-') || 'M01-T01';
+  const code = meta?.lessonCode || 'M01-T01-U01';
+  const moduleId = meta?.moduleId || code.split('-')[0] || 'M01';
+  const topicId = meta?.topicId || code.split('-').slice(0, 2).join('-') || 'M01-T01';
 
   let title = 'Урок';
   const titleMatch = content.match(/^#\s+(.+)$/m) || content.match(/\*\*Название:\*\*\s*(.+)$/m);

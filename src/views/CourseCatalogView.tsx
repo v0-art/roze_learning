@@ -103,7 +103,7 @@ export const CourseCatalogView: React.FC<CourseCatalogViewProps> = ({ navigate }
               onClick={() => navigate(`/course/${module.id}`)}
               className={`rounded-2xl border p-5 shadow-xl transition-all duration-200 flex flex-col justify-between cursor-pointer ${
                 hasLessons
-                  ? "border-cyan-500/40 bg-[#111B2E] hover:border-cyan-400 hover:shadow-cyan-500/10"
+                  ? "border-cyan-500/40 bg-[#20172f] hover:border-cyan-400 hover:shadow-cyan-500/10"
                   : "border-slate-800/70 bg-slate-900/30 hover:border-slate-700 opacity-80 hover:opacity-100"
               }`}
             >

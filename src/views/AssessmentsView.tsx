@@ -17,7 +17,9 @@ import {
 } from "lucide-react";
 import {
   getAssessments,
-  saveAssessmentRecord,
+  getExams,
+  loadDatabase,
+  syncDatabaseFromServer,
   getCurrentUser,
   subscribeToDatabase,
 } from "../services/storage";
@@ -34,10 +36,10 @@ export const AssessmentsView: React.FC<AssessmentsViewProps> = ({ navigate }) =>
   const [activeTab, setActiveTab] = useState<"take" | "history">("take");
 
   // Assessment Simulator state
-  const [targetType, setTargetType] = useState<"control_work" | "exam">("control_work");
-  const [theory1Score, setTheory1Score] = useState(25);
-  const [theory2Score, setTheory2Score] = useState(25);
-  const [practicalScore, setPracticalScore] = useState(30);
+  const [selectedTargetId, setSelectedTargetId] = useState("");
+  const [theory1Score, setTheory1Score] = useState(0);
+  const [theory2Score, setTheory2Score] = useState(0);
+  const [practicalScore, setPracticalScore] = useState(0);
   const [answerNotes, setAnswerNotes] = useState("");
   const [lastSubmissionResult, setLastSubmissionResult] = useState<AssessmentRecord | null>(null);
 
@@ -53,44 +55,26 @@ export const AssessmentsView: React.FC<AssessmentsViewProps> = ({ navigate }) =>
   const totalScore = theory1Score + theory2Score + practicalScore;
   const maxScore = 100;
 
-  // Determine current attempt number for this target
-  const targetId = targetType === "control_work" ? "M01-T01-KR01" : "M01-EX01";
-  const targetTitle =
-    targetType === "control_work"
-      ? "Контрольная работа M01-T01: Основы теории информации"
-      : "Экзамен по дисциплине M01: Информация и вычисления";
+  const availableAssessments = getExams().filter(e => e.status === 'published');
+  const published = availableAssessments.find(e => e.id === selectedTargetId) || availableAssessments[0];
+  const targetId = published?.id || '';
+  const targetTitle = published?.title || 'Аттестация';
 
   const pastAttemptsForTarget = records.filter((r) => r.targetId === targetId);
   const nextAttemptNumber = pastAttemptsForTarget.length + 1;
 
+  const extraAttempts = (loadDatabase().assessmentRetakeGrants || []).filter(g => g.userId === currentUser.id && g.targetId === targetId).length;
   const currentGradeEvaluation = classifyScore(totalScore, maxScore, nextAttemptNumber);
 
-  const handleSubmit = () => {
-    const record: AssessmentRecord = {
-      id: `ass-${Date.now()}`,
-      userId: currentUser.id,
-      targetId,
-      targetTitle,
-      type: targetType,
-      attemptNumber: nextAttemptNumber,
-      score: totalScore,
-      maxScore,
-      percentage: currentGradeEvaluation.percentage,
-      grade: currentGradeEvaluation.grade,
-      verificationStatus: "self_reported",
-      requiresIntervention: currentGradeEvaluation.requiresIntervention,
-      timestamp: new Date().toISOString(),
-      details: {
-        theory1Score,
-        theory2Score,
-        practicalScore,
-        answersNotes: answerNotes,
-      },
-    };
-
-    const saved = saveAssessmentRecord(record, currentUser);
-    setLastSubmissionResult(saved);
-    setAnswerNotes("");
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch('/api/assessments', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({targetId, theory1Score, theory2Score, practicalScore, answersNotes: answerNotes})});
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Не удалось сохранить отчёт.');
+      await syncDatabaseFromServer();
+      setLastSubmissionResult(result);
+      setAnswerNotes('');
+    } catch (error) { alert(error instanceof Error ? error.message : 'Ошибка сохранения'); }
   };
 
   return (
@@ -105,7 +89,7 @@ export const AssessmentsView: React.FC<AssessmentsViewProps> = ({ navigate }) =>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100 mt-1 flex items-center space-x-2.5">
             <Award className="w-7 h-7 text-cyan-400" />
-            <span>Аттестационный центр NEXUS</span>
+            <span>Аттестационный центр Rozephyr</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Сдача рубежных контрольных работ и официальных экзаменов по утверждённой оценочной шкале.
@@ -137,7 +121,7 @@ export const AssessmentsView: React.FC<AssessmentsViewProps> = ({ navigate }) =>
       </div>
 
       {/* Mandatory Intervention Banner if Limit reached (Section 15.7) */}
-      {currentGradeEvaluation.requiresIntervention && (
+      {pastAttemptsForTarget.length >= 4 + extraAttempts && pastAttemptsForTarget.every(r => r.score / r.maxScore < 0.5) && (
         <div className="p-4 rounded-xl bg-rose-950/70 border border-rose-700 text-rose-200 flex items-start space-x-3 shadow-xl animate-pulse">
           <ShieldAlert className="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
           <div className="text-xs space-y-1">
@@ -145,7 +129,7 @@ export const AssessmentsView: React.FC<AssessmentsViewProps> = ({ navigate }) =>
               ВНИМАНИЕ: Исчерпан лимит из 3 пересдач для {targetTitle}!
             </p>
             <p className="text-rose-200 leading-relaxed">
-              Согласно политике обучения, после третьей неудачной пересдачи автоматический допуск блокируется. Главному ментору отправлено экстренное уведомление для назначения индивидуальной консультации.
+              Согласно политике обучения, после третьей неудачной пересдачи автоматический допуск блокируется. Дальнейшие попытки доступны только после решения ментора.
             </p>
           </div>
         </div>
@@ -155,51 +139,17 @@ export const AssessmentsView: React.FC<AssessmentsViewProps> = ({ navigate }) =>
       {activeTab === "take" ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Config & Scoring */}
-          <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl space-y-6">
+          <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl space-y-6">
             <div className="space-y-4">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
                 Выберите вид контроля:
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setTargetType("control_work")}
-                  className={`p-4 rounded-xl text-left border transition-all ${
-                    targetType === "control_work"
-                      ? "bg-cyan-500/10 border-cyan-500/50 shadow-md shadow-cyan-500/10"
-                      : "bg-slate-900 border-slate-800 hover:border-slate-700"
-                  }`}
-                >
-                  <span className="font-mono text-xs font-bold text-cyan-400 block">
-                    M01-T01-KR01
-                  </span>
-                  <span className="text-sm font-bold text-slate-100 mt-1 block">
-                    Рубежная контрольная работа
-                  </span>
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">
-                    По теме M01-T01 (Информация и модель связи)
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setTargetType("exam")}
-                  className={`p-4 rounded-xl text-left border transition-all ${
-                    targetType === "exam"
-                      ? "bg-cyan-500/10 border-cyan-500/50 shadow-md shadow-cyan-500/10"
-                      : "bg-slate-900 border-slate-800 hover:border-slate-700"
-                  }`}
-                >
-                  <span className="font-mono text-xs font-bold text-violet-400 block">
-                    M01-EX01
-                  </span>
-                  <span className="text-sm font-bold text-slate-100 mt-1 block">
-                    Итоговый экзамен по модулю
-                  </span>
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">
-                    2 теоретических вопроса + 1 расчётная задача
-                  </span>
-                </button>
+                {availableAssessments.map(item => <button key={item.id} type="button" onClick={() => setSelectedTargetId(item.id)} className={`p-4 rounded-xl text-left border ${targetId === item.id ? 'bg-cyan-500/10 border-cyan-500/50' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`}>
+                  <span className="font-mono text-xs font-bold text-cyan-400 block">{item.id}</span>
+                  <span className="text-sm font-bold text-slate-100 mt-1 block">{item.title}</span>
+                </button>)}
+                {availableAssessments.length === 0 && <p className="text-xs text-slate-400">Опубликованных контрольных работ и экзаменов пока нет.</p>}
               </div>
             </div>
 
@@ -268,10 +218,12 @@ export const AssessmentsView: React.FC<AssessmentsViewProps> = ({ navigate }) =>
                 onChange={(e) => setAnswerNotes(e.target.value)}
                 placeholder="Укажите ход рассуждений или формулы..."
                 rows={4}
-                className="w-full rounded-lg bg-[#090F1C] border border-slate-800 p-3 text-xs text-slate-200 font-mono focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                className="w-full rounded-lg bg-[#110d1b] border border-slate-800 p-3 text-xs text-slate-200 font-mono focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
               />
             </div>
 
+            {!published && <p className="text-amber-300 text-xs">Эта аттестация пока не опубликована ментором.</p>}
+            <p className="text-slate-400 text-xs">Укажите баллы и сведения из фактического отчёта внешнего преподавателя. Результат будет помечен как самоотчёт.</p>
             {/* Action */}
             <div className="flex items-center justify-between pt-2">
               <span className="text-xs text-slate-400 font-mono">
@@ -280,7 +232,7 @@ export const AssessmentsView: React.FC<AssessmentsViewProps> = ({ navigate }) =>
 
               <button
                 onClick={handleSubmit}
-                disabled={currentGradeEvaluation.requiresIntervention}
+                disabled={!published || pastAttemptsForTarget.length >= 4 + extraAttempts || pastAttemptsForTarget.some(r => r.score / r.maxScore >= 0.5)}
                 className="px-6 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center space-x-2 shadow-lg shadow-cyan-500/20 active:scale-98 transition-all disabled:opacity-50 disabled:pointer-events-none"
               >
                 <span>Зафиксировать результат аттестации</span>
@@ -290,7 +242,7 @@ export const AssessmentsView: React.FC<AssessmentsViewProps> = ({ navigate }) =>
           </div>
 
           {/* Real-Time Live Grade Evaluation Panel */}
-          <div className="rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl flex flex-col justify-between space-y-6">
+          <div className="rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl flex flex-col justify-between space-y-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -350,7 +302,7 @@ export const AssessmentsView: React.FC<AssessmentsViewProps> = ({ navigate }) =>
         </div>
       ) : (
         /* History of Assessment Records */
-        <div className="rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl space-y-4">
+        <div className="rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
             <h3 className="text-base font-bold text-slate-100 flex items-center space-x-2">
               <Clock className="w-4 h-4 text-cyan-400" />

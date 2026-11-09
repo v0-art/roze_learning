@@ -62,35 +62,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
 
   // Determine current active lesson
   const publishedLessons = useMemo(
-    () => lessons.filter((l) => l.status === "approved" || (l as any).status === "published"),
+    () => lessons.filter((l) => l.status === "published"),
     [lessons]
   );
   const submittedLessonIds = useMemo(() => new Set(attempts.map((a) => a.lessonId)), [attempts]);
 
   // Next lesson: first approved lesson not yet submitted, or first lesson from all lessons
   const nextLesson: LessonItem | null = useMemo(() => {
-    const unsubmittedApproved = publishedLessons.find((l) => !submittedLessonIds.has(l.code));
-    if (unsubmittedApproved) return unsubmittedApproved;
-    const unsubmittedAny = lessons.find((l) => !submittedLessonIds.has(l.code));
-    if (unsubmittedAny) return unsubmittedAny;
-    return publishedLessons[0] || lessons[0] || null;
-  }, [publishedLessons, submittedLessonIds, lessons]);
+    return publishedLessons.find(l => !submittedLessonIds.has(l.code) && (!l.previousLessonId || submittedLessonIds.has(l.previousLessonId))) || null;
+  }, [publishedLessons, submittedLessonIds]);
 
   const lastAttempt = attempts[0] || null;
   const isPendingPreviousReport = false; // Next lesson unlocks upon valid report
 
   // Metrics
-  const completedLessonsCount = attempts.length;
+  const completedLessonsCount = submittedLessonIds.size;
   const totalPublishedLessons = publishedLessons.length;
-  const completedDisciplinesCount = attempts.length >= 3 ? 1 : 0;
+  const completedDisciplinesCount = new Set(assessments.filter(a => a.type === 'exam' && a.verificationStatus === 'mentor_confirmed' && a.score / a.maxScore >= 0.5).map(a => a.targetId.split('-')[0])).size;
   const openGapsCount = gaps.filter((g) => g.status === "needs-review").length;
   const resolvedGapsCount = gaps.filter((g) => g.status === "resolved").length;
 
   // Average score
   const avgScore = useMemo(() => {
     if (attempts.length === 0) return 0;
-    const sum = attempts.reduce((acc, curr) => acc + (curr.score || 0), 0);
-    return Math.round(sum / attempts.length);
+    const valid = attempts.filter(a => typeof a.score === "number" && typeof a.maxScore === "number" && a.maxScore > 0);
+    if (!valid.length) return 0;
+    const sum = valid.reduce((acc, curr) => acc + (curr.score! / curr.maxScore!) * 100, 0);
+    return Math.round(sum / valid.length);
   }, [attempts]);
 
   // Activity points calculated purely from real submitted attempts (per ТЗ v2.0)
@@ -118,18 +116,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
     });
   }, [timeFilter, attempts]);
 
-  // Mastered skills extracted dynamically from verified correct assessment questions
+  // Correct answers in reports are preliminary and do not establish skill mastery.
   const masteredSkills = useMemo(() => {
     const skillsMap = new Map<string, { code: string; title: string; date: string }>();
     attempts.forEach((a) => {
-      if (a.assessment?.questions) {
-        a.assessment.questions.forEach((q) => {
+      if (a.structuredReport?.assessment?.questions) {
+        a.structuredReport.assessment.questions.forEach((q) => {
           if (q.result === "correct" && Array.isArray(q.skillIds)) {
             q.skillIds.forEach((sid) => {
               if (!skillsMap.has(sid)) {
                 skillsMap.set(sid, {
                   code: sid,
-                  title: `Освоенный навык ${sid}`,
+                  title: `Правильный ответ по навыку ${sid}`,
                   date: a.submittedAt ? new Date(a.submittedAt).toLocaleDateString("ru-RU") : "Ранее",
                 });
               }
@@ -151,7 +149,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
               Добро пожаловать, {currentUser.displayName.split(" ")[0]}!
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-cyan-950 text-cyan-400 border border-cyan-800">
-              {currentUser.role === "admin" ? "Главный ментор" : "Курсант NEXUS"}
+              {currentUser.role === "admin" ? "Главный ментор" : "Ученик Rozephyr"}
             </span>
           </div>
           <p className="text-sm text-slate-400 mt-1">
@@ -173,8 +171,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
 
       {/* Hero: "Продолжить обучение" */}
       {nextLesson ? (
-        <div className="relative overflow-hidden rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-[#111B2E] via-[#13223D] to-[#172238] p-6 sm:p-8 shadow-2xl">
-          <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[radial-gradient(circle_at_top_right,#36D7F5_0,transparent_70%)] opacity-15 pointer-events-none" />
+        <div className="relative overflow-hidden rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-[#20172f] via-[#302043] to-[#29203e] p-6 sm:p-8 shadow-2xl">
+          <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[radial-gradient(circle_at_top_right,#c9b9fa_0,transparent_70%)] opacity-15 pointer-events-none" />
 
           <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="space-y-3 max-w-2xl">
@@ -222,11 +220,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl border border-slate-800 bg-[#111B2E] p-8 text-center space-y-3">
+        <div className="rounded-2xl border border-slate-800 bg-[#20172f] p-8 text-center space-y-3">
           <BookOpen className="w-10 h-10 text-cyan-400 mx-auto" />
-          <h2 className="text-lg font-bold text-slate-100">Учебный план формируется</h2>
+          <h2 className="text-lg font-bold text-slate-100">{publishedLessons.length ? "Все опубликованные уроки пройдены" : "Учебный план формируется"}</h2>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
-            Опубликуйте уроки в административной панели или загрузите материалы для начала прохождения траектории.
+            {publishedLessons.length ? "Следующие уроки появятся после публикации ментором. Это не означает завершения всей программы." : "Уроки появятся здесь после публикации ментором."}
           </p>
         </div>
       )}
@@ -234,7 +232,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
       {/* 4 Core Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1 */}
-        <div className="p-5 rounded-2xl border border-slate-800 bg-[#111B2E] shadow-lg">
+        <div className="p-5 rounded-2xl border border-slate-800 bg-[#20172f] shadow-lg">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Уроки
@@ -260,7 +258,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
         </div>
 
         {/* Metric 2 */}
-        <div className="p-5 rounded-2xl border border-slate-800 bg-[#111B2E] shadow-lg">
+        <div className="p-5 rounded-2xl border border-slate-800 bg-[#20172f] shadow-lg">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               18 Дисциплин
@@ -274,12 +272,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
             <span className="text-xs text-slate-400 font-mono">/ 18 курсов</span>
           </div>
           <p className="text-[11px] text-slate-400 mt-2 font-mono">
-            {completedDisciplinesCount === 0 ? "В процессе освоения M01" : "Освоена M01"}
+            {completedDisciplinesCount === 0 ? "Нет подтверждённых экзаменов" : "По подтверждённым экзаменам"}
           </p>
         </div>
 
         {/* Metric 3 */}
-        <div className="p-5 rounded-2xl border border-slate-800 bg-[#111B2E] shadow-lg">
+        <div className="p-5 rounded-2xl border border-slate-800 bg-[#20172f] shadow-lg">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Средний балл
@@ -292,12 +290,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
             </span>
           </div>
           <p className="text-[11px] text-slate-400 mt-2 font-mono">
-            {attempts.length > 0 ? `${attempts.length} подтвержд. отчётов` : "Ожидает первой сдачи"}
+            {attempts.length > 0 ? `${attempts.length} самоотчётов` : "Ожидает первой сдачи"}
           </p>
         </div>
 
         {/* Metric 4 */}
-        <div className="p-5 rounded-2xl border border-slate-800 bg-[#111B2E] shadow-lg">
+        <div className="p-5 rounded-2xl border border-slate-800 bg-[#20172f] shadow-lg">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Пробелы в знаниях
@@ -311,7 +309,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
             <span className="text-xs text-slate-400 font-mono">открытых</span>
           </div>
           <p className="text-[11px] text-slate-400 mt-2 font-mono">
-            Устранено: {resolvedGapsCount} пробелов
+            Предварительно устранено: {resolvedGapsCount}
           </p>
         </div>
       </div>
@@ -319,7 +317,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
       {/* Activity Chart & Trajectory */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Activity Chart */}
-        <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl">
+        <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl">
           <div className="flex items-center justify-between pb-4 border-b border-slate-800/80">
             <div>
               <h3 className="text-sm font-bold text-slate-100 flex items-center space-x-2">
@@ -386,7 +384,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
         </div>
 
         {/* Next Goal Card */}
-        <div className="rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl flex flex-col justify-between">
+        <div className="rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center space-x-2 text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-2">
               <Sparkles className="w-4 h-4" />
@@ -431,21 +429,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
       {/* Strong vs Weak Knowledge Panels (Section 6.5) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Strong Skills */}
-        <div className="rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl">
+        <div className="rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
             <h3 className="text-sm font-bold text-emerald-400 flex items-center space-x-2">
               <CheckCircle2 className="w-4 h-4" />
-              <span>Хорошо освоено</span>
+              <span>Правильные ответы в отчётах</span>
             </h3>
             <span className="text-xs text-slate-400 font-mono">
-              {masteredSkills.length > 0 ? `${masteredSkills.length} подтверждено` : "Пока нет данных"}
+              {masteredSkills.length > 0 ? `${masteredSkills.length} по самоотчётам` : "Пока нет данных"}
             </span>
           </div>
 
           <div className="mt-4 space-y-2.5">
             {masteredSkills.length === 0 ? (
               <div className="p-4 text-center text-xs text-slate-400 bg-slate-900/50 rounded-xl">
-                Пройдите первое занятие в ChatGPT и загрузите отчёт, чтобы зафиксировать подтверждённые навыки.
+                Загрузите отчёт, чтобы увидеть правильные ответы. Подтверждение навыков требует проверки ментора.
               </div>
             ) : (
               masteredSkills.map((item, idx) => (
@@ -465,7 +463,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate }) => {
         </div>
 
         {/* Weak / Attention Required Skills */}
-        <div className="rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl">
+        <div className="rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
             <h3 className="text-sm font-bold text-amber-400 flex items-center space-x-2">
               <AlertTriangle className="w-4 h-4" />

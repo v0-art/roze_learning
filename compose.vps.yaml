@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: roze_admin
+      POSTGRES_DB: rozephyr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.vps}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    build: .
+    restart: "no"
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: rozephyr
+      PGUSER: roze_admin
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.vps}
+      NEXUS_RELATIONAL_APP_USER: roze_app
+      NEXUS_RELATIONAL_APP_PASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in .env.vps}
+      NEXUS_INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:?Set INITIAL_ADMIN_PASSWORD in .env.vps}
+    command: ["node", "--import", "tsx", "scripts/docker-init.ts"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: rozephyr
+      PGUSER: roze_app
+      PGPASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in .env.vps}
+      NEXUS_COOKIE_SECURE: ${COOKIE_SECURE:-true}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?Set SITE_ADDRESS in .env.vps}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

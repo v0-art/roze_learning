@@ -170,7 +170,7 @@ export const AdminExamsView: React.FC<AdminExamsViewProps> = ({ navigate }) => {
 
       {/* Constraints & Limits Verification Card (Section 11) */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-        <div className="p-3.5 rounded-xl bg-[#111B2E] border border-slate-800 flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-[#20172f] border border-slate-800 flex items-center justify-between">
           <div>
             <span className="text-slate-400 block text-[10px] uppercase font-semibold">Всего билетов</span>
             <strong className="text-slate-100 text-lg font-mono">{currentExam?.tickets?.length || 0}</strong>
@@ -178,7 +178,7 @@ export const AdminExamsView: React.FC<AdminExamsViewProps> = ({ navigate }) => {
           <span className="text-[10px] text-cyan-400 font-mono">Требуется: 24</span>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-[#111B2E] border border-slate-800 flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-[#20172f] border border-slate-800 flex items-center justify-between">
           <div>
             <span className="text-slate-400 block text-[10px] uppercase font-semibold">Уникальных теор. вопросов</span>
             <strong className="text-emerald-400 text-lg font-mono">{uniqueTheoryCount}</strong>
@@ -186,7 +186,7 @@ export const AdminExamsView: React.FC<AdminExamsViewProps> = ({ navigate }) => {
           <span className="text-[10px] text-slate-400 font-mono">Лимит: ≤ 50</span>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-[#111B2E] border border-slate-800 flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-[#20172f] border border-slate-800 flex items-center justify-between">
           <div>
             <span className="text-slate-400 block text-[10px] uppercase font-semibold">Уникальных задач</span>
             <strong className="text-emerald-400 text-lg font-mono">{uniquePracticalCount}</strong>
@@ -194,7 +194,7 @@ export const AdminExamsView: React.FC<AdminExamsViewProps> = ({ navigate }) => {
           <span className="text-[10px] text-slate-400 font-mono">Лимит: ≤ 25</span>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-[#111B2E] border border-slate-800 flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-[#20172f] border border-slate-800 flex items-center justify-between">
           <div>
             <span className="text-slate-400 block text-[10px] uppercase font-semibold">Статус экзамена</span>
             <strong className={`text-xs uppercase font-mono px-2 py-0.5 rounded ${
@@ -212,7 +212,7 @@ export const AdminExamsView: React.FC<AdminExamsViewProps> = ({ navigate }) => {
       {/* Main Grid: Ticket Selector & Ticket Editor */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Tickets List */}
-        <div className="lg:col-span-4 rounded-2xl border border-slate-800 bg-[#111B2E] p-4 shadow-xl space-y-3">
+        <div className="lg:col-span-4 rounded-2xl border border-slate-800 bg-[#20172f] p-4 shadow-xl space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-800">
             <span className="text-xs font-bold text-slate-100">Список билетов ({filteredTickets.length})</span>
             <span className="text-[11px] text-cyan-400 font-mono">{currentExam?.id}</span>
@@ -256,7 +256,7 @@ export const AdminExamsView: React.FC<AdminExamsViewProps> = ({ navigate }) => {
         </div>
 
         {/* Right: Ticket Content & Weight Editor */}
-        <div className="lg:col-span-8 rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl space-y-6">
+        <div className="lg:col-span-8 rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl space-y-6">
           {activeTicket ? (
             <>
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">

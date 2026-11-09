@@ -1,659 +1,227 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import React, { useState, useRef, useEffect, useMemo } from "react";
-import {
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
-  Search,
-  Filter,
-  CheckCircle2,
-  Lock,
-  Clock,
-  AlertCircle,
-  Sparkles,
-  ArrowRight,
-  ListFilter,
-  Layers,
-  Info,
-  X,
-  Compass,
-} from "lucide-react";
-import { GraphNode, GraphEdge, SkillMasteryStatus } from "../types";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, Maximize2, X } from 'lucide-react';
+import type { ModuleItem, RelationItem, SkillItem, TopicItem } from '../types';
+import { moduleConnections, topicConnections } from '../core/knowledgeMap';
+import { ModuleOverview } from './ModuleOverview';
+import { getCurrentUser } from '../services/storage';
+import type {ModuleRelation} from '../core/moduleGraph';
 
 interface KnowledgeGraphProps {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-  onSelectNode?: (node: GraphNode) => void;
-  onNavigateToModule?: (moduleId: string) => void;
-  onNavigateToLesson?: (lessonId: string) => void;
+  modules: ModuleItem[];
+  topics: TopicItem[];
+  relations: RelationItem[];
+  skills: SkillItem[];
+  onExit: () => void;
+  moduleGraphEdges?: ModuleRelation[];
+  mentor?: boolean;
 }
 
-export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
-  nodes,
-  edges,
-  onSelectNode,
-  onNavigateToModule,
-  onNavigateToLesson,
-}) => {
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>("M01");
-  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(0.8);
-  const [pan, setPan] = useState({ x: 40, y: 30 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [levelFilter, setLevelFilter] = useState<number | "all">("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<"graph" | "list">("graph");
+type MapItem = { id: string; title: string; description?: string };
+type PositionedItem = MapItem & { x: number; y: number };
 
+const CARD_WIDTH = 176;
+const CARD_HEIGHT = 72;
+const STEP_X = 250;
+const STEP_Y = 168;
+const MARGIN = 24;
+const NODE_COLORS = ['#c6a7f4', '#91b8ed', '#81cbd1', '#e5a9ca', '#d4b478', '#a8c993', '#e39b91', '#ad9ee5', '#78b6ca', '#d1a4d8', '#9dc9bc', '#e0ba92', '#adbee4', '#d59cb1', '#a3c5e5', '#c5bf89', '#96ceb0', '#d0a6b9'];
+
+// Orthogonal segments with small rounded elbows, like parallel cables in a tray.
+function cablePath(points: {x: number; y: number}[]) {
+  let path = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length - 1; i++) {
+    const previous = points[i - 1], corner = points[i], next = points[i + 1];
+    const before = Math.hypot(corner.x - previous.x, corner.y - previous.y);
+    const after = Math.hypot(next.x - corner.x, next.y - corner.y);
+    if (!before || !after) { path += ` L ${corner.x} ${corner.y}`; continue; }
+    const radius = Math.min(7, before / 2, after / 2);
+    const x1 = corner.x + (previous.x - corner.x) * radius / before;
+    const y1 = corner.y + (previous.y - corner.y) * radius / before;
+    const x2 = corner.x + (next.x - corner.x) * radius / after;
+    const y2 = corner.y + (next.y - corner.y) * radius / after;
+    path += ` L ${x1} ${y1} Q ${corner.x} ${corner.y} ${x2} ${y2}`;
+  }
+  const last = points[points.length - 1];
+  return `${path} L ${last.x} ${last.y}`;
+}
+
+
+function wrapTitle(title: string): string[] {
+  const lines: string[] = [];
+  for (const word of title.split(/\s+/)) {
+    const last = lines.length - 1;
+    if (last < 0 || `${lines[last]} ${word}`.length > 21) lines.push(word);
+    else lines[last] += ` ${word}`;
+  }
+  if (lines.length > 2) return [lines[0], `${lines[1].slice(0, 19)}…`];
+  return lines;
+}
+
+export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ modules, topics, relations, skills, onExit,moduleGraphEdges,mentor }) => {
+  const [moduleId, setModuleId] = useState<string | null>(null);
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [panelSide, setPanelSide] = useState<'left' | 'right'>('right');
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [camera, setCamera] = useState({ scale: 1, x: 0, y: 0 });
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const dragRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
 
-  const selectedNode = useMemo(
-    () => nodes.find((n) => n.id === selectedNodeId) || null,
-    [nodes, selectedNodeId]
-  );
-
-  // Filtered nodes
-  const filteredNodes = useMemo(() => {
-    return nodes.filter((n) => {
-      const matchSearch =
-        searchQuery.trim() === "" ||
-        n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        n.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        n.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchLevel = levelFilter === "all" || n.level === levelFilter;
-      const matchStatus = statusFilter === "all" || (n.status || "available") === statusFilter;
-
-      return matchSearch && matchLevel && matchStatus;
-    });
-  }, [nodes, searchQuery, levelFilter, statusFilter]);
-
-  const filteredNodeIds = useMemo(
-    () => new Set(filteredNodes.map((n) => n.id)),
-    [filteredNodes]
-  );
-
-  // Edges that connect visible nodes
-  const visibleEdges = useMemo(() => {
-    return edges.filter(
-      (e) => filteredNodeIds.has(e.from) && filteredNodeIds.has(e.to)
-    );
-  }, [edges, filteredNodeIds]);
-
-  // Connected edges to selected or hovered node
-  const activeFocusId = hoveredNodeId || selectedNodeId;
-  const connectedNodeIds = useMemo(() => {
-    if (!activeFocusId) return new Set<string>();
-    const set = new Set<string>([activeFocusId]);
-    edges.forEach((e) => {
-      if (e.from === activeFocusId) set.add(e.to);
-      if (e.to === activeFocusId) set.add(e.from);
-    });
-    return set;
-  }, [activeFocusId, edges]);
-
-  // Pan handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  const svgPoint = (svg: SVGSVGElement, clientX: number, clientY: number) => {
+    const matrix = svg.getScreenCTM();
+    if (!matrix) return null;
+    const point = svg.createSVGPoint();
+    point.x = clientX;
+    point.y = clientY;
+    return point.matrixTransform(matrix.inverse());
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const point = svgPoint(svg, event.clientX, event.clientY);
+      if (!point) return;
+      setCamera(current => {
+        const scale = Math.max(0.5, Math.min(5, current.scale * Math.exp(-event.deltaY * 0.0015)));
+        const ratio = scale / current.scale;
+        return { scale, x: point.x - (point.x - current.x) * ratio, y: point.y - (point.y - current.y) * ratio };
+      });
+    };
+    svg.addEventListener('wheel', onWheel, { passive: false });
+    return () => svg.removeEventListener('wheel', onWheel);
+  }, [moduleId, topics, modules]);
+  const activeModule = modules.find(module => module.id === moduleId);
+  const moduleTopics = useMemo(() => topics.filter(topic => topic.moduleId === moduleId).sort((a, b) => a.order - b.order), [topics, moduleId]);
+  const items: MapItem[] = moduleId
+    ? moduleTopics.map(topic => ({id: topic.id, title: topic.title, description: topic.description}))
+    : [...modules].sort((a, b) => a.order - b.order).map(module => ({id: module.id, title: module.title}));
+  const links = moduleId ? topicConnections(moduleTopics, relations) : moduleConnections(modules, topics, relations);
+  const columns = Math.min(moduleId ? 4 : 6, Math.max(1, items.length));
+  const rows = Math.ceil(items.length / columns);
+  const width = MARGIN * 2 + (columns - 1) * STEP_X + CARD_WIDTH;
+  const height = MARGIN * 2 + (rows - 1) * STEP_Y + CARD_HEIGHT;
+  const positioned: PositionedItem[] = items.map((item, index) => ({...item, x: MARGIN + (index % columns) * STEP_X, y: MARGIN + Math.floor(index / columns) * STEP_Y}));
+  const positions = new Map(positioned.map(item => [item.id, item]));
+  const colors = new Map(positioned.map((item, index) => [item.id, NODE_COLORS[index % NODE_COLORS.length]]));
+  const focus = hovered || selectedTopic;
+  const topic = topics.find(item => item.id === selectedTopic);
+  const topicSkills = skills.filter(skill => skill.topicId === selectedTopic);
+  const topicRelations = relations.filter(relation => relation.fromId === selectedTopic || relation.toId === selectedTopic).map(relation => {
+    const otherId = relation.fromId === selectedTopic ? relation.toId : relation.fromId;
+    const otherModule = modules.find(item => item.id === otherId);
+    const otherTopic = topics.find(item => item.id === otherId);
+    if (!otherModule && !otherTopic) return null;
+    const crossSubject = otherModule ? otherModule.id !== moduleId : otherTopic?.moduleId !== moduleId;
+    const label = relation.type === 'prerequisite' ? (relation.toId === selectedTopic ? 'Предварительная тема' : 'Основа для') : relation.fromId === selectedTopic ? 'Применяется в' : 'Связано с';
+    const description = relation.description && !/^Связь между\s/i.test(relation.description) ? relation.description : '';
+    return {id: relation.id, name: `${otherId} · ${otherModule?.title || otherTopic?.title}`, crossSubject, label, description};
+  }).filter((relation): relation is NonNullable<typeof relation> => relation !== null);
+  const selectTopic = (id: string, element: SVGGElement) => {
+    const node = element.getBoundingClientRect();
+    const graph = svgRef.current?.getBoundingClientRect();
+    setPanelSide(graph && node.left + node.width / 2 > graph.left + graph.width / 2 ? 'left' : 'right');
+    setSelectedTopic(id);
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
+  const enterModule = (id: string) => {
+    setModuleId(id);
+    setSelectedTopic(null);
+    setHovered(null);
+    setCamera({ scale: 1, x: 0, y: 0 });
+  };
+  const backToModules = () => {
+    setModuleId(null);
+    setSelectedTopic(null);
+    setHovered(null);
+    setCamera({ scale: 1, x: 0, y: 0 });
   };
 
-  const handleZoom = (delta: number) => {
-    setZoom((prev) => Math.max(0.4, Math.min(2.5, prev + delta)));
-  };
+  if (!moduleId) return <ModuleOverview modules={modules} onEnter={enterModule} onExit={onExit} admin={mentor??(getCurrentUser().role === 'admin')} suppliedEdges={moduleGraphEdges} />;
 
-  const handleFitToScreen = () => {
-    setZoom(0.8);
-    setPan({ x: 40, y: 30 });
-  };
-
-  const getStatusColor = (status?: SkillMasteryStatus) => {
-    switch (status) {
-      case "confirmed":
-        return { border: "#10b981", bg: "#064e3b", text: "#34d399", label: "Подтверждено" };
-      case "studied":
-      case "in_progress":
-        return { border: "#06b6d4", bg: "#164e63", text: "#38bdf8", label: "В процессе" };
-      case "available":
-        return { border: "#64748b", bg: "#1e293b", text: "#94a3b8", label: "Доступно" };
-      case "needs_review":
-        return { border: "#f59e0b", bg: "#78350f", text: "#fbbf24", label: "Требует внимания" };
-      case "locked":
-      default:
-        return { border: "#334155", bg: "#0f172a", text: "#64748b", label: "Заблокировано" };
-    }
-  };
-
-  const getNodeDims = (node: GraphNode) => {
-    if (node.level === 1) return { w: 200, h: 64 };
-    if (node.level === 2) return { w: 220, h: 60 };
-    return { w: 160, h: 48 };
-  };
-
-  return (
-    <div className="relative w-full h-[700px] rounded-2xl border border-slate-800 bg-[#070C18] overflow-hidden flex flex-col shadow-2xl select-none">
-      {/* Top Toolbar */}
-      <div className="z-10 px-4 py-3 border-b border-slate-800/80 bg-[#090F1C]/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2 text-cyan-400">
-            <Compass className="w-5 h-5 text-cyan-400 animate-pulse" />
-            <span className="font-bold text-sm tracking-wide text-slate-100 uppercase font-mono">
-              Flight Route: Карта знаний
-            </span>
-          </div>
-
-          <div className="hidden sm:flex items-center space-x-1 pl-3 border-l border-slate-800">
-            <button
-              onClick={() => setViewMode("graph")}
-              className={`px-2.5 py-1 text-xs rounded-md font-medium transition-all ${
-                viewMode === "graph"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              2D Граф
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`px-2.5 py-1 text-xs rounded-md font-medium transition-all ${
-                viewMode === "list"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              Иерархический список
-            </button>
-          </div>
-        </div>
-
-        {/* Filters and search */}
-        <div className="flex items-center space-x-2">
-          {/* Search */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Поиск по коду или теме..."
-              className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 w-36 sm:w-48"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-2 text-slate-500 hover:text-slate-300"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Level Filter */}
-          <select
-            value={levelFilter}
-            onChange={(e) => setLevelFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
-            className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
-          >
-            <option value="all">Все уровни (Полная карта)</option>
-            <option value="1">Уровень 1: 18 Модулей (Магистрали)</option>
-            <option value="2">Уровень 2: 8 Тем M01 (Коридоры)</option>
-            <option value="3">Уровень 3: Компетенции и навыки</option>
-          </select>
-
-          {/* Zoom controls */}
-          {viewMode === "graph" && (
-            <div className="flex items-center space-x-1 pl-2 border-l border-slate-800">
-              <button
-                onClick={() => handleZoom(0.15)}
-                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800"
-                title="Приблизить"
-              >
-                <ZoomIn className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => handleZoom(-0.15)}
-                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800"
-                title="Отдалить"
-              >
-                <ZoomOut className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={handleFitToScreen}
-                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800"
-                title="По размеру экрана"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
+  return <section className="relative flex h-full w-full flex-col overflow-hidden bg-[#100b19]">
+    <div className="z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-[#1a1328] px-4 py-3">
+      <div className="flex items-center gap-3">
+        <button onClick={onExit} className="flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:border-cyan-400" aria-label="Выйти из карты"><ArrowLeft size={15} /> Кабинет</button>
+        {moduleId && <button onClick={backToModules} className="flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:border-cyan-400" aria-label="Вернуться к модулям"><ArrowLeft size={15} /> Все модули</button>}
+        <div>
+          <h2 className="font-semibold text-slate-100">{activeModule ? `${activeModule.code} · ${activeModule.title}` : 'Модули курса'}</h2>
+          <p className="mt-1 text-xs text-slate-400">{activeModule ? 'Темы модуля и связи между ними' : 'Выберите модуль, чтобы увидеть его темы и связи'}</p>
         </div>
       </div>
-
-      {/* Main Graph Canvas */}
-      {viewMode === "graph" ? (
-        <div
-          className="relative flex-1 cursor-grab active:cursor-grabbing overflow-hidden"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-        >
-          {/* Subtle Grid Backdrop */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-20"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 1px 1px, #36D7F5 1px, transparent 0)",
-              backgroundSize: "40px 40px",
-            }}
-          />
-
-          <svg
-            ref={svgRef}
-            className="w-full h-full"
-            style={{
-              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-              transformOrigin: "0 0",
-              transition: isDragging ? "none" : "transform 0.1s ease-out",
-            }}
-          >
-            <defs>
-              {/* Gradients and Filters for Flight Route aesthetics */}
-              <linearGradient id="routeGradientCyan" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#36D7F5" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#9478FF" stopOpacity="0.8" />
-              </linearGradient>
-
-              <linearGradient id="routeGradientDimmed" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#334155" stopOpacity="0.3" />
-                <stop offset="100%" stopColor="#1e293b" stopOpacity="0.2" />
-              </linearGradient>
-
-              {/* Directional Flight-Route Arrowhead Markers */}
-              <marker
-                id="flightArrowCyan"
-                viewBox="0 0 10 10"
-                refX="9"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto"
-              >
-                <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#36D7F5" />
-              </marker>
-
-              <marker
-                id="flightArrowDimmed"
-                viewBox="0 0 10 10"
-                refX="9"
-                refY="5"
-                markerWidth="5"
-                markerHeight="5"
-                orient="auto"
-              >
-                <path d="M 0 2 L 8 5 L 0 8 z" fill="#334155" />
-              </marker>
-
-              <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            </defs>
-
-            {/* Flight-Route Edges (Curved Bézier Great-Circle Arcs) */}
-            <g className="edges-layer">
-              {visibleEdges.map((edge) => {
-                const source = nodes.find((n) => n.id === edge.from);
-                const target = nodes.find((n) => n.id === edge.to);
-                if (!source || !target) return null;
-
-                const sDims = getNodeDims(source);
-                const tDims = getNodeDims(target);
-                const sx = source.x + sDims.w / 2;
-                const sy = source.y + sDims.h / 2;
-                const tx = target.x + tDims.w / 2;
-                const ty = target.y + tDims.h / 2;
-
-                // Aviation great-circle arc: perpendicular normal vector
-                const dx = tx - sx;
-                const dy = ty - sy;
-                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-                const nx = -dy / dist;
-                const ny = dx / dist;
-                const arcHeight = Math.min(80, Math.max(30, dist * 0.22));
-
-                const cx1 = sx + dx * 0.35 + nx * arcHeight;
-                const cy1 = sy + dy * 0.35 + ny * arcHeight;
-                const cx2 = sx + dx * 0.65 + nx * arcHeight;
-                const cy2 = sy + dy * 0.65 + ny * arcHeight;
-
-                const pathData = `M ${sx} ${sy} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${tx} ${ty}`;
-
-                const isConnected =
-                  !activeFocusId ||
-                  edge.from === activeFocusId ||
-                  edge.to === activeFocusId;
-
-                const strokeColor = isConnected ? "url(#routeGradientCyan)" : "#1e293b";
-                const strokeWidth = isConnected ? 2.5 : 1;
-                const strokeDash = edge.type === "related" ? "4 4" : undefined;
-
-                return (
-                  <g key={edge.id} className="transition-all duration-200">
-                    {/* Shadow / glow path */}
-                    {isConnected && (
-                      <path
-                        d={pathData}
-                        fill="none"
-                        stroke="#36D7F5"
-                        strokeWidth={6}
-                        strokeOpacity={0.15}
-                        filter="url(#glowCyan)"
-                      />
-                    )}
-                    {/* Main Oriented Flight Path */}
-                    <path
-                      d={pathData}
-                      fill="none"
-                      stroke={strokeColor}
-                      strokeWidth={strokeWidth}
-                      strokeDasharray={strokeDash}
-                      markerEnd={isConnected ? "url(#flightArrowCyan)" : "url(#flightArrowDimmed)"}
-                      className={isConnected ? "animate-pulse" : ""}
-                    />
-                    {/* Moving pulse light on active route */}
-                    {isConnected && (
-                      <circle r="3" fill="#36D7F5" filter="url(#glowCyan)">
-                        <animateMotion
-                          path={pathData}
-                          dur="4s"
-                          repeatCount="indefinite"
-                        />
-                      </circle>
-                    )}
-                  </g>
-                );
-              })}
-            </g>
-
-            {/* Flight-Route Nodes */}
-            <g className="nodes-layer">
-              {filteredNodes.map((node) => {
-                const isSelected = selectedNodeId === node.id;
-                const isHovered = hoveredNodeId === node.id;
-                const isConnected = !activeFocusId || connectedNodeIds.has(node.id);
-                const statusStyle = getStatusColor(node.status);
-                const { w: width, h: height } = getNodeDims(node);
-
-                return (
-                  <g
-                    key={node.id}
-                    transform={`translate(${node.x}, ${node.y})`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedNodeId(node.id);
-                      if (onSelectNode) onSelectNode(node);
-                    }}
-                    onMouseEnter={() => setHoveredNodeId(node.id)}
-                    onMouseLeave={() => setHoveredNodeId(null)}
-                    className="cursor-pointer transition-transform duration-150"
-                    opacity={isConnected ? 1 : 0.25}
-                  >
-                    {/* Glowing highlight for active/selected node */}
-                    {(isSelected || isHovered) && (
-                      <rect
-                        x="-3"
-                        y="-3"
-                        width={width + 6}
-                        height={height + 6}
-                        rx="12"
-                        fill="none"
-                        stroke="#36D7F5"
-                        strokeWidth="2"
-                        filter="url(#glowCyan)"
-                      />
-                    )}
-
-                    {/* Node Card Rectangle */}
-                    <rect
-                      x="0"
-                      y="0"
-                      width={width}
-                      height={height}
-                      rx="10"
-                      fill={node.level === 1 ? "#111B2E" : "#0E1626"}
-                      stroke={isSelected ? "#36D7F5" : statusStyle.border}
-                      strokeWidth={isSelected ? 2 : 1}
-                      className="shadow-xl"
-                    />
-
-                    {/* Level 1 Accent Bar */}
-                    {node.level === 1 && (
-                      <rect
-                        x="0"
-                        y="0"
-                        width="4"
-                        height={height}
-                        rx="2"
-                        fill={isSelected ? "#36D7F5" : "#9478FF"}
-                      />
-                    )}
-
-                    {/* Status Dot */}
-                    <circle
-                      cx={node.level === 1 ? 16 : 14}
-                      cy="16"
-                      r="4"
-                      fill={statusStyle.border}
-                    />
-
-                    {/* Code Badge */}
-                    <text
-                      x={node.level === 1 ? 26 : 24}
-                      y="19"
-                      fill="#94A6BF"
-                      fontSize="10"
-                      fontFamily="monospace"
-                      fontWeight="bold"
-                    >
-                      {node.code}
-                    </text>
-
-                    {/* Title */}
-                    <text
-                      x="14"
-                      y={node.level === 3 ? "32" : "38"}
-                      fill="#F1F5FA"
-                      fontSize={node.level === 1 ? "11.5" : node.level === 2 ? "11" : "10"}
-                      fontWeight="600"
-                    >
-                      {node.title.length > 25 ? node.title.slice(0, 23) + "…" : node.title}
-                    </text>
-
-                    {/* Subtitle / Status text */}
-                    <text
-                      x="14"
-                      y={node.level === 1 ? "53" : node.level === 2 ? "51" : "42"}
-                      fill={statusStyle.text}
-                      fontSize="8.5"
-                    >
-                      {statusStyle.label}
-                    </text>
-                  </g>
-                );
-              })}
-            </g>
-          </svg>
-        </div>
-      ) : (
-        /* Accessible List View Fallback (Mobile-friendly, WCAG AA) */
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 divide-y divide-slate-800">
-          <div className="pb-3 text-xs text-slate-400">
-            Отображается {filteredNodes.length} элементов учебного маршрута. Нажмите для инспекции:
-          </div>
-          {filteredNodes.map((n) => {
-            const st = getStatusColor(n.status);
-            return (
-              <div
-                key={n.id}
-                onClick={() => setSelectedNodeId(n.id)}
-                className={`py-3 px-3 rounded-lg flex items-center justify-between cursor-pointer transition-colors ${
-                  selectedNodeId === n.id ? "bg-cyan-950/40 border border-cyan-800/60" : "hover:bg-slate-900"
-                }`}
-              >
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono text-xs font-bold text-cyan-400">{n.code}</span>
-                    <span className="text-xs uppercase px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-mono text-[10px]">
-                      {n.level === 1 ? "Дисциплина" : "Навык"}
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-semibold text-slate-100 mt-0.5">{n.title}</h4>
-                  <p className="text-xs text-slate-400 line-clamp-1">{n.description}</p>
-                </div>
-
-                <div className="text-right">
-                  <span
-                    className="text-xs px-2 py-0.5 rounded font-mono font-medium"
-                    style={{ backgroundColor: st.bg, color: st.text }}
-                  >
-                    {st.label}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Selected Node Side Inspector Drawer */}
-      {selectedNode && (
-        <div className="absolute right-0 top-14 bottom-0 w-80 sm:w-96 bg-[#111B2E]/95 backdrop-blur-md border-l border-slate-800 p-5 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-200 z-20">
-          <div>
-            <div className="flex items-start justify-between border-b border-slate-800 pb-3">
-              <div>
-                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
-                  {selectedNode.code}
-                </span>
-                <h3 className="text-base font-bold text-slate-100 mt-2">{selectedNode.title}</h3>
-                <span className="text-xs text-slate-400 font-mono">
-                  {selectedNode.level === 1 ? "Дисциплина (Уровень 1)" : "Компетенция (Уровень 3)"}
-                </span>
-              </div>
-              <button
-                onClick={() => setSelectedNodeId(null)}
-                className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-4">
-              <div>
-                <h5 className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
-                  Описание:
-                </h5>
-                <p className="text-xs text-slate-300 leading-relaxed">{selectedNode.description}</p>
-              </div>
-
-              {/* Prerequisites */}
-              <div>
-                <h5 className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1.5 flex items-center space-x-1">
-                  <span>Предшествующие знания (Prerequisites):</span>
-                </h5>
-                {selectedNode.prerequisites && selectedNode.prerequisites.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedNode.prerequisites.map((prId) => (
-                      <button
-                        key={prId}
-                        onClick={() => setSelectedNodeId(prId)}
-                        className="px-2 py-1 rounded bg-slate-900 border border-slate-700/80 text-cyan-300 text-[11px] font-mono hover:border-cyan-500 transition-colors"
-                      >
-                        {prId}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500">Базовый узел (нет зависимостей)</p>
-                )}
-              </div>
-
-              {/* Future Applications */}
-              <div>
-                <h5 className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1.5">
-                  Где применяется далее (Future Applications):
-                </h5>
-                {selectedNode.futureApplications && selectedNode.futureApplications.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedNode.futureApplications.map((faId) => (
-                      <button
-                        key={faId}
-                        onClick={() => setSelectedNodeId(faId)}
-                        className="px-2 py-1 rounded bg-slate-900 border border-slate-700/80 text-violet-300 text-[11px] font-mono hover:border-violet-400 transition-colors"
-                      >
-                        {faId}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500">Конечный синтез программы</p>
-                )}
-              </div>
-
-              {/* Status */}
-              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs">
-                <span className="text-slate-400">Статус освоения: </span>
-                <span className="font-semibold text-cyan-400 font-mono">
-                  {getStatusColor(selectedNode.status).label}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Action button */}
-          <div className="pt-4 border-t border-slate-800 mt-6">
-            {selectedNode.level === 1 ? (
-              <button
-                onClick={() => {
-                  if (onNavigateToModule) onNavigateToModule(selectedNode.id);
-                }}
-                className="w-full py-2.5 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-cyan-500/20 transition-all active:scale-98"
-              >
-                <span>Открыть дисциплину {selectedNode.code}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  if (onNavigateToLesson) onNavigateToLesson("M01-T01-U01");
-                }}
-                className="w-full py-2.5 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-cyan-500/20 transition-all active:scale-98"
-              >
-                <span>Изучить в уроке M01-T01-U01</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      <button type="button" onClick={() => setCamera({ scale: 1, x: 0, y: 0 })} className="flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:border-cyan-400" title="Показать всю карту"><Maximize2 size={15} /> Вся карта</button>
     </div>
-  );
+
+    {items.length === 0 ? <div className="flex flex-1 items-center justify-center px-6 text-center text-sm text-slate-400">Для этого модуля темы пока не загружены.</div> : <>
+      <div className="relative min-h-0 flex-1 overflow-hidden bg-[#100b19]" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, #4a385d 1px, transparent 0)', backgroundSize: '32px 32px'}}>
+        <svg
+          ref={svgRef}
+          viewBox={`${-width * 0.25} ${-height * 0.25} ${width * 1.5} ${height * 1.5}`}
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          aria-label={moduleId ? 'Карта тем модуля' : 'Карта модулей курса'}
+          className="block h-full w-full touch-none"
+          onPointerDown={event => {
+            if (event.button !== 0 || (event.target as Element).closest('[data-map-node]')) return;
+            const point = svgPoint(event.currentTarget, event.clientX, event.clientY);
+            if (!point) return;
+            dragRef.current = { x: point.x, y: point.y, panX: camera.x, panY: camera.y };
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }}
+          onPointerMove={event => {
+            if (!dragRef.current) return;
+            const point = svgPoint(event.currentTarget, event.clientX, event.clientY);
+            if (point) setCamera(current => ({ ...current, x: dragRef.current!.panX + point.x - dragRef.current!.x, y: dragRef.current!.panY + point.y - dragRef.current!.y }));
+          }}
+          onPointerUp={event => { dragRef.current = null; if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}
+          onPointerCancel={() => { dragRef.current = null; }}
+        >
+          <defs>{positioned.map(item => <marker key={item.id} id={`map-arrow-${item.id}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill={colors.get(item.id)} /></marker>)}</defs>
+          <g transform={`translate(${camera.x} ${camera.y}) scale(${camera.scale})`}>
+          {links.map(link => {
+            const from = positions.get(link.from), to = positions.get(link.to);
+            if (!from || !to) return null;
+            const outgoing = links.filter(edge => edge.from === link.from);
+            const incoming = links.filter(edge => edge.to === link.to);
+            const outIndex = outgoing.findIndex(edge => edge.to === link.to);
+            const inIndex = incoming.findIndex(edge => edge.from === link.from);
+            const port = (index: number, count: number) => CARD_WIDTH * (index + 1) / (count + 1);
+            const x1 = from.x + port(outIndex, outgoing.length);
+            const x2 = to.x + port(inIndex, incoming.length);
+            const direction = to.y >= from.y ? 1 : -1;
+            const y1 = direction === 1 ? from.y + CARD_HEIGHT : from.y;
+            const y2 = to.y === from.y ? to.y + CARD_HEIGHT : direction === 1 ? to.y : to.y + CARD_HEIGHT;
+            const lane1 = y1 + direction * (12 + (outIndex % 12) * 4);
+            const lane2 = y2 - direction * (12 + (inIndex % 12) * 4);
+            const channelX = from.x + CARD_WIDTH + 12 + (outIndex % 12) * 4;
+            const points = to.y === from.y
+              ? [{x:x1,y:y1}, {x:x1,y:lane1}, {x:x2,y:lane1}, {x:x2,y:y2}]
+              : [{x:x1,y:y1}, {x:x1,y:lane1}, {x:channelX,y:lane1}, {x:channelX,y:lane2}, {x:x2,y:lane2}, {x:x2,y:y2}];
+            const active = focus === link.from || focus === link.to;
+            return <path key={`${link.from}-${link.to}`} data-map-edge d={cablePath(points)} fill="none" stroke={colors.get(link.to)} strokeWidth={active ? 2.6 : 1.5} strokeLinecap="round" strokeLinejoin="round" opacity={focus && !active ? 0.15 : 0.8} markerEnd={`url(#map-arrow-${link.to})`} />;
+          })}
+          {positioned.map(item => {
+            const highlighted = focus === item.id || Boolean(focus && links.some(link => (link.from === focus && link.to === item.id) || (link.to === focus && link.from === item.id)));
+            return <g key={item.id} data-map-node role="button" tabIndex={0} aria-label={`${moduleId ? 'Тема' : 'Модуль'} ${item.id}: ${item.title}`} onMouseEnter={() => setHovered(item.id)} onMouseLeave={() => setHovered(null)} onClick={event => moduleId ? selectTopic(item.id, event.currentTarget) : enterModule(item.id)} onKeyDown={event => {if (event.key === 'Enter' || event.key === ' ') {event.preventDefault(); moduleId ? selectTopic(item.id, event.currentTarget) : enterModule(item.id);}}} className="cursor-pointer" opacity={focus && !highlighted ? 0.65 : 1}>
+              <title>{item.id}: {item.title}</title>
+              <rect x={item.x} y={item.y} width={CARD_WIDTH} height={CARD_HEIGHT} rx="10" fill="#20172f" stroke={highlighted ? '#c6b3f5' : '#685671'} strokeWidth={highlighted ? 2 : 1} />
+              <rect x={item.x} y={item.y} width="4" height={CARD_HEIGHT} rx="2" fill={colors.get(item.id)} />
+              <text x={item.x + 15} y={item.y + 18} fill="#e0d2ff" fontSize="12" fontWeight="700">{item.id}</text>
+              <text x={item.x + 15} y={item.y + 36} fill="#f8f3fb" fontSize="11" fontWeight="600">{wrapTitle(item.title).map((line, index) => <tspan key={index} x={item.x + 15} dy={index ? 13 : 0}>{line}</tspan>)}</text>
+              {!moduleId && <text x={item.x + 15} y={item.y + 64} fill="#b6a9c5" fontSize="10">Открыть темы →</text>}
+            </g>;
+          })}
+          </g>
+        </svg>
+        {topic && <aside aria-label="Сведения о теме" className={`absolute bottom-3 top-3 z-20 w-[min(34rem,calc(100%-1.5rem))] overflow-y-auto rounded-2xl border border-violet-300/20 bg-[#1a1328]/95 p-6 sm:p-8 text-slate-100 shadow-2xl backdrop-blur-sm ${panelSide === 'left' ? 'left-3' : 'right-3'}`}>
+          <div className="flex items-start justify-between gap-3"><div><p className="text-base font-semibold tracking-wider text-violet-300">{topic.code}</p><h3 className="mt-1 text-xl font-semibold leading-snug">{topic.title}</h3></div><button onClick={() => setSelectedTopic(null)} aria-label="Закрыть сведения о теме" className="rounded-lg p-1 text-slate-300 hover:bg-white/10"><X size={20} /></button></div>
+          <section className="mt-5"><h4 className="text-base font-semibold text-violet-200">О теме</h4><p className="mt-2 text-base leading-relaxed text-slate-300">{topic.description || 'Описание темы пока не заполнено.'}</p></section>
+          {topic.learningObjectives?.length > 0 && <section className="mt-5"><h4 className="text-base font-semibold text-violet-200">Цели изучения</h4><ul className="mt-2 list-disc space-y-1 pl-4 text-base text-slate-300">{topic.learningObjectives.map(objective => <li key={objective}>{objective}</li>)}</ul></section>}
+          {topicSkills.length > 0 && <section className="mt-5"><h4 className="text-base font-semibold text-violet-200">Что изучается</h4><ul className="mt-2 space-y-3">{topicSkills.map(skill => <li key={skill.id} className="text-base text-slate-300"><span className="font-medium text-slate-100">{skill.name}</span>{skill.description && <p className="mt-1 leading-relaxed">{skill.description}</p>}</li>)}</ul></section>}
+          <section className="mt-5"><h4 className="text-base font-semibold text-violet-200">Межпредметные связи</h4>{topicRelations.some(link => link.crossSubject) ? <ul className="mt-2 space-y-3">{topicRelations.filter(link => link.crossSubject).map(link => <li key={link.id} className="text-base text-slate-300"><span className="text-base text-violet-300">{link.label}</span><p className="mt-1 font-medium text-slate-100">{link.name}</p><p className="mt-1">{link.description || 'Пояснение связи ещё не заполнено в учебном плане.'}</p></li>)}</ul> : <p className="mt-2 text-base text-slate-400">Связи с другими дисциплинами пока не указаны.</p>}</section>
+          {topicRelations.some(link => !link.crossSubject) && <section className="mt-5"><h4 className="text-base font-semibold text-violet-200">Связи с темами модуля</h4><ul className="mt-2 space-y-2">{topicRelations.filter(link => !link.crossSubject).map(link => <li key={link.id} className="text-base text-slate-300"><span className="text-base text-violet-300">{link.label}</span><p>{link.name}</p>{link.description && <p className="mt-1">{link.description}</p>}</li>)}</ul></section>}
+        </aside>}
+      </div>
+    </>}
+  </section>;
 };

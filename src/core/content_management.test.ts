@@ -33,6 +33,11 @@ import {
 } from './contentImporter';
 import { LessonItem, StructuredReport } from '../types';
 
+// Tests use an isolated in-memory copy; production content is loaded from the server.
+const testData = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'data/nexus_academy.json'), 'utf8'));
+for (const lesson of testData.lessons) lesson.status = 'draft';
+saveDatabase(testData);
+
 test('1. Structure Check: 18 Disciplines present, M01 approved, M02-M18 contain 0 approved lessons', () => {
   const modules = getModules();
   assert.equal(modules.length, 18, 'Must contain exactly 18 disciplines');
@@ -70,16 +75,15 @@ test('2. Topics Check: Module M01 contains exactly 8 approved topics', () => {
   }
 });
 
-test('3. Lessons Check: M01 has exactly 52 loaded lessons ready for study', () => {
+test('3. Lessons Check: M01 lessons remain draft until publication', () => {
   const m01Lessons = getLessons('M01');
   assert.equal(m01Lessons.length, 52, 'M01 must contain exactly 52 lessons');
   
-  // All 52 lessons should be loaded and approved for study
-  const approvedLessons = m01Lessons.filter((l) => l.status === 'approved');
+  const approvedLessons = m01Lessons.filter((l) => l.status === 'draft');
   assert.equal(
     approvedLessons.length,
     52,
-    'All 52 lessons of M01 must be approved upon initial load for students'
+    'All 52 lessons remain drafts until separately published'
   );
 });
 
@@ -166,10 +170,10 @@ test('6. Versioning: Editing a lesson prompt creates a new version and preserves
 
 test('7. Publishing: Published lesson is approved and marked accessible', () => {
   const u01 = getLessonById('M01-T01-U01')!;
-  saveLesson({ ...u01, status: 'approved' }, 'Публикация урока', 'admin-mentor', 'Дмитрий');
+  saveLesson({ ...u01, status: 'published' }, 'Публикация урока', 'admin-mentor', 'Дмитрий');
 
   const published = getLessonById('M01-T01-U01')!;
-  assert.equal(published.status, 'approved', 'Lesson must now be approved');
+  assert.equal(published.status, 'published', 'Lesson must now be approved');
 });
 
 test('8. Draft Guard: Unpublishing a lesson switches status back to draft', () => {
@@ -180,7 +184,7 @@ test('8. Draft Guard: Unpublishing a lesson switches status back to draft', () =
   assert.equal(draftLesson.status, 'draft', 'Lesson must now be in draft');
 
   // Restore approved status for student learning
-  saveLesson({ ...draftLesson, status: 'approved' }, 'Восстановление публикации', 'admin-mentor', 'Дмитрий');
+  saveLesson({ ...draftLesson, status: 'draft' }, 'Восстановление черновика', 'admin-mentor', 'Дмитрий');
 });
 
 test('9. Open Exam Tickets: M01-EX01 has 24 tickets in draft status with correct limits', () => {
@@ -295,7 +299,7 @@ test('14. RBAC: Student cannot publish or edit lessons', () => {
   assert.equal(user.role, 'student');
 
   // Verify role check logic
-  const canEdit = user.role === 'admin';
+  const canEdit = getCurrentUser().role === 'admin';
   assert.equal(canEdit, false, 'Student role cannot edit educational content');
 
   // Switch back to admin

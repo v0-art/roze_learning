@@ -22,7 +22,9 @@ import {
   getAssessments,
   confirmAssessmentByMentor,
   getCurrentUser,
+  getAllUsers,
   subscribeToDatabase,
+  syncDatabaseFromServer,
 } from "../services/storage";
 import { LessonAttempt, AssessmentRecord } from "../types";
 
@@ -30,6 +32,10 @@ export const AdminReportsView: React.FC = () => {
   const [currentUser, setUser] = useState(getCurrentUser());
   const [attempts, setAttempts] = useState<LessonAttempt[]>(getAllLessonAttempts());
   const [assessments, setAssessments] = useState<AssessmentRecord[]>(getAssessments());
+  const [selectedStudentId, setSelectedStudentId] = useState('all');
+  const students = getAllUsers().filter(u => u.role === 'student');
+  const visibleAttempts = attempts.filter(a => selectedStudentId === 'all' || a.userId === selectedStudentId);
+  const visibleAssessments = assessments.filter(a => selectedStudentId === 'all' || a.userId === selectedStudentId);
   const [selectedAttemptId, setSelectedAttemptId] = useState<string | null>(null);
   const [mentorComment, setMentorComment] = useState("");
   const [correctedScore, setCorrectedScore] = useState<number | "">("");
@@ -45,23 +51,33 @@ export const AdminReportsView: React.FC = () => {
     return unsub;
   }, []);
 
-  const selectedAttempt = attempts.find((a) => a.id === selectedAttemptId) || attempts[0] || null;
+  const selectedAttempt = visibleAttempts.find((a) => a.id === selectedAttemptId) || visibleAttempts[0] || null;
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     if (!selectedAttempt) return;
-    const finalScore = typeof correctedScore === "number" ? correctedScore : selectedAttempt.score;
-    confirmLessonAttemptByMentor(
-      selectedAttempt.id,
-      currentUser,
-      finalScore,
-      mentorComment || "Отчёт проверен и утверждён наставником.",
-      auditReason || "Штатная верификация отчёта"
-    );
-    setFeedbackSuccess(true);
-    setMentorComment("");
-    setCorrectedScore("");
-    setAuditReason("");
-    setTimeout(() => setFeedbackSuccess(false), 3000);
+    const score = typeof correctedScore === 'number' ? correctedScore : selectedAttempt.score;
+    try {
+      const response = await fetch('/api/mentor/review', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({attemptId: selectedAttempt.id, score, feedback: mentorComment, reason: auditReason || 'Проверка отчёта ментором'})});
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Не удалось сохранить решение.');
+      await syncDatabaseFromServer();
+      setFeedbackSuccess(true); setMentorComment(''); setCorrectedScore(''); setAuditReason('');
+      setTimeout(() => setFeedbackSuccess(false), 3000);
+    } catch (error) { alert(error instanceof Error ? error.message : 'Ошибка сохранения'); }
+  };
+  const handleRetakeGrant = async (assessment: AssessmentRecord) => {
+    const reason = window.prompt('Основание для дополнительной пересдачи:');
+    if (!reason?.trim()) return;
+    const response = await fetch('/api/mentor/retake', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({userId: assessment.userId, targetId: assessment.targetId, reason})});
+    if (!response.ok) { alert('Дополнительную попытку назначить не удалось.'); return; }
+    await syncDatabaseFromServer();
+  };
+  const handleAssessmentReview = async (assessmentId: string, status: 'mentor_confirmed' | 'needs_correction') => {
+    const feedback = window.prompt('Комментарий к решению:');
+    if (!feedback?.trim()) return;
+    const response = await fetch('/api/mentor/assessment', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({assessmentId, status, feedback})});
+    if (!response.ok) { alert('Не удалось сохранить решение.'); return; }
+    await syncDatabaseFromServer();
   };
 
   return (
@@ -84,8 +100,11 @@ export const AdminReportsView: React.FC = () => {
         </div>
       </div>
 
-      {attempts.length === 0 && assessments.length === 0 ? (
-        <div className="rounded-2xl border border-slate-800 bg-[#111B2E] p-12 text-center space-y-3">
+      <label className="block rounded-xl border border-slate-700 bg-[#20172f] p-4 text-sm">Ученик
+        <select aria-label="Ученик" value={selectedStudentId} onChange={e=>{setSelectedStudentId(e.target.value);setSelectedAttemptId(null);}} className="ml-3 rounded-lg border border-slate-600 bg-slate-900 p-2"><option value="all">Все ученики</option>{students.map(u=><option key={u.id} value={u.id}>{u.displayName}</option>)}</select>
+      </label>
+      {visibleAttempts.length === 0 && visibleAssessments.length === 0 ? (
+        <div className="rounded-2xl border border-slate-800 bg-[#20172f] p-12 text-center space-y-3">
           <FileCheck2 className="w-10 h-10 text-slate-500 mx-auto" />
           <h3 className="text-base font-bold text-slate-200">Входящих отчётов пока нет</h3>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
@@ -95,13 +114,19 @@ export const AdminReportsView: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Inbox list */}
-          <div className="rounded-2xl border border-slate-800 bg-[#111B2E] p-5 shadow-xl space-y-3">
+          <div className="rounded-2xl border border-slate-800 bg-[#20172f] p-5 shadow-xl space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300 pb-2 border-b border-slate-800">
-              Очередь на проверку ({attempts.length + assessments.length})
+              Очередь на проверку ({visibleAttempts.length + visibleAssessments.length})
             </h3>
 
+            {visibleAssessments.map(a => <div key={a.id} className="p-3 rounded-xl bg-slate-900 text-xs space-y-2">
+              <p className="text-cyan-300 font-bold">{a.targetTitle} · попытка {a.attemptNumber}</p>
+              <p>{a.score}/{a.maxScore} · {a.verificationStatus}</p>
+              <p className="text-slate-400 whitespace-pre-wrap">{a.details?.answersNotes}</p>
+              <div className="flex gap-2"><button className="text-emerald-300" onClick={() => handleAssessmentReview(a.id, 'mentor_confirmed')}>Подтвердить</button><button className="text-amber-300" onClick={() => handleAssessmentReview(a.id, 'needs_correction')}>На исправление</button>{a.attemptNumber >= 4 && <button className="text-cyan-300" onClick={() => handleRetakeGrant(a)}>Доп. попытка</button>}</div>
+            </div>)}
             <div className="space-y-2 max-h-[550px] overflow-y-auto">
-              {attempts.map((att) => (
+              {visibleAttempts.map((att) => (
                 <div
                   key={att.id}
                   onClick={() => setSelectedAttemptId(att.id)}
@@ -123,7 +148,7 @@ export const AdminReportsView: React.FC = () => {
                       {att.mentorConfirmed ? "Подтверждён" : "Самоотчёт"}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-200 font-medium mt-1">Курсант: Алексей Смирнов</p>
+                  <p className="text-xs text-slate-200 font-medium mt-1">Курсант: {getAllUsers().find(u => u.id === att.userId)?.displayName || att.userId}</p>
                   <p className="text-[11px] text-slate-400 font-mono mt-0.5">
                     Балл: {att.score} / {att.maxScore} • {new Date(att.submittedAt || att.startedAt).toLocaleTimeString()}
                   </p>
@@ -134,7 +159,7 @@ export const AdminReportsView: React.FC = () => {
 
           {/* Active Report Inspector */}
           {selectedAttempt && (
-            <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-[#111B2E] p-6 shadow-xl space-y-6">
+            <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-[#20172f] p-6 shadow-xl space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-slate-800">
                 <div>
                   <div className="flex items-center space-x-2">
@@ -142,7 +167,7 @@ export const AdminReportsView: React.FC = () => {
                       {selectedAttempt.lessonId}
                     </span>
                     <span className="text-xs text-slate-400 font-mono">
-                      Курсант: Алексей Смирнов
+                      Курсант: {getAllUsers().find(u => u.id === selectedAttempt.userId)?.displayName || selectedAttempt.userId}
                     </span>
                   </div>
                   <h2 className="text-xl font-bold text-slate-100 mt-2">

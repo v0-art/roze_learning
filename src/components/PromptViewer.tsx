@@ -10,23 +10,26 @@ import { AssembledPrompt } from "../core/promptEngine";
 interface PromptViewerProps {
   assembledPrompt: AssembledPrompt;
   onCopied?: () => void;
+  onPrepare?: () => Promise<void>;
 }
 
-export const PromptViewer: React.FC<PromptViewerProps> = ({ assembledPrompt, onCopied }) => {
+export const PromptViewer: React.FC<PromptViewerProps> = ({ assembledPrompt, onCopied, onPrepare }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
     try {
+      await onPrepare?.();
       await navigator.clipboard.writeText(assembledPrompt.fullPromptText);
       setCopied(true);
       if (onCopied) onCopied();
       setTimeout(() => setCopied(false), 2500);
     } catch (err) {
-      console.error("Clipboard copy failed:", err);
+      alert(err instanceof Error ? err.message : "Не удалось скопировать промпт.");
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
+    try { await onPrepare?.(); } catch (err) { alert(err instanceof Error ? err.message : "Не удалось сохранить снимок."); return; }
     const blob = new Blob([assembledPrompt.fullPromptText], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -37,7 +40,7 @@ export const PromptViewer: React.FC<PromptViewerProps> = ({ assembledPrompt, onC
   };
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-[#111B2E] p-4 sm:p-6 shadow-xl">
+    <div className="rounded-xl border border-slate-800 bg-[#20172f] p-4 sm:p-6 shadow-xl">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-800/80">
         <div>
           <div className="flex items-center space-x-2">
@@ -101,7 +104,7 @@ export const PromptViewer: React.FC<PromptViewerProps> = ({ assembledPrompt, onC
           readOnly
           value={assembledPrompt.fullPromptText}
           rows={12}
-          className="w-full rounded-lg bg-[#090F1C] border border-slate-800/90 p-3.5 font-mono text-xs text-slate-300 leading-relaxed focus:outline-none focus:ring-1 focus:ring-cyan-500/40 resize-y"
+          className="w-full rounded-lg bg-[#110d1b] border border-slate-800/90 p-3.5 font-mono text-xs text-slate-300 leading-relaxed focus:outline-none focus:ring-1 focus:ring-cyan-500/40 resize-y"
         />
       </div>
 

@@ -23,12 +23,14 @@ import {
   GraphEdge,
   StructuredReport,
 } from '../types';
-import seedData from '../../data/nexus_academy.json' with { type: 'json' };
+const seedData = { users: [], modules: [], topics: [], lessons: [], skills: [], relations: [], exams: [], libraryFiles: [], lessonAttempts: [], knowledgeGaps: [], homework: [], assessments: [], notifications: [], auditLogs: [], messages: [], graphNodes: [], graphEdges: [] };
 
 const DB_KEY = 'nexus_academy_db_v9';
 const CURRENT_USER_KEY = 'nexus_academy_current_user_id';
 
 export interface DatabaseState {
+  currentUserId?: string;
+  _contentRevision?: string;
   users: User[];
   modules: ModuleItem[];
   topics: TopicItem[];
@@ -41,6 +43,7 @@ export interface DatabaseState {
   knowledgeGaps: KnowledgeGap[];
   homework: HomeworkItem[];
   assessments: AssessmentRecord[];
+  assessmentRetakeGrants?: Array<{userId: string; targetId: string}>;
   notifications: AdminNotification[];
   auditLogs: AuditLogItem[];
   messages: MessageItem[];
@@ -70,6 +73,7 @@ export function subscribeToDatabase(listener: Listener): () => void {
 
 let inMemoryDb: DatabaseState | null = null;
 let isSyncingWithServer = false;
+let authenticatedUserId: string | null = null;
 
 // Initial fallback state (seeded from data/nexus_academy.json)
 function getInitialState(): DatabaseState {
@@ -126,9 +130,10 @@ export async function syncDatabaseFromServer(): Promise<DatabaseState | null> {
     if (res.ok) {
       const serverData = await res.json();
       if (serverData && Array.isArray(serverData.modules)) {
+        authenticatedUserId = serverData.currentUserId;
         inMemoryDb = serverData as DatabaseState;
         try {
-          localStorage.setItem(DB_KEY, JSON.stringify(serverData));
+          localStorage.removeItem(DB_KEY);
         } catch {
           // ignore localStorage quota errors
         }
@@ -145,63 +150,26 @@ export async function syncDatabaseFromServer(): Promise<DatabaseState | null> {
 }
 
 // Immediately trigger initial sync
-if (typeof window !== 'undefined') {
-  syncDatabaseFromServer();
-}
+
 
 export function loadDatabase(): DatabaseState {
   if (inMemoryDb) {
     return inMemoryDb;
   }
 
-  if (typeof window !== 'undefined') {
-    try {
-      const stored = localStorage.getItem(DB_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && Array.isArray(parsed.modules) && parsed.modules.length > 0) {
-          const seed = getInitialState();
-          // Self-heal: ensure lessons array is populated with at least seed lessons
-          if (!Array.isArray(parsed.lessons) || parsed.lessons.length < seed.lessons.length) {
-            parsed.lessons = seed.lessons;
-          } else {
-            const hasAnyApproved = parsed.lessons.some((l: any) => l.moduleId === 'M01' && l.status === 'approved');
-            if (!hasAnyApproved) {
-              parsed.lessons = seed.lessons;
-            }
-          }
-          if (!Array.isArray(parsed.topics) || parsed.topics.length < seed.topics.length) {
-            parsed.topics = seed.topics;
-          }
-          if (!Array.isArray(parsed.skills) || parsed.skills.length < seed.skills.length) {
-            parsed.skills = seed.skills;
-          }
-          if (!Array.isArray(parsed.exams) || parsed.exams.length < seed.exams.length) {
-            parsed.exams = seed.exams;
-          }
-          if (!Array.isArray(parsed.homework) || parsed.homework.length < seed.homework.length) {
-            parsed.homework = seed.homework;
-          }
-          inMemoryDb = parsed;
-          return inMemoryDb as DatabaseState;
-        }
-      }
-    } catch (e) {
-      console.warn('Could not read from localStorage, using initial state', e);
-    }
-  }
 
   inMemoryDb = getInitialState();
   return inMemoryDb;
 }
 
 export function saveDatabase(db: DatabaseState): void {
+  if (getCurrentUser().role !== 'admin') { console.warn('Student bulk writes are disabled'); return; }
   inMemoryDb = db;
 
   // 1. Optimistic write to localStorage
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem(DB_KEY, JSON.stringify(db));
+      localStorage.removeItem(DB_KEY);
     } catch (e) {
       console.warn('Could not save to localStorage', e);
     }
@@ -211,8 +179,15 @@ export function saveDatabase(db: DatabaseState): void {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(db),
+    }).then(async (response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await response.json();
+      if (inMemoryDb && result.revision) inMemoryDb._contentRevision = result.revision;
+      await syncDatabaseFromServer();
     }).catch((err) => {
       console.warn('Server sync failed:', err);
+      window.alert('Не удалось сохранить изменения на сервере. Данные будут обновлены.');
+      void syncDatabaseFromServer();
     });
   }
 
@@ -225,8 +200,7 @@ let activeUserId: string | null = null;
 export function getCurrentUser(): User {
   const db = loadDatabase();
   const targetId =
-    activeUserId ||
-    (typeof window !== 'undefined' ? localStorage.getItem(CURRENT_USER_KEY) : null);
+    authenticatedUserId || activeUserId;
   if (targetId) {
     const found = db.users.find((u) => u.id === targetId);
     if (found) return found;
@@ -235,6 +209,7 @@ export function getCurrentUser(): User {
 }
 
 export function setCurrentUserId(userId: string): void {
+  if (authenticatedUserId) return;
   activeUserId = userId;
   if (typeof window !== 'undefined') {
     try {
@@ -312,7 +287,7 @@ export function getLessons(filter?: string | {
 
   // If student and not explicitly requested to include unpublished, show approved lessons
   if (user.role === 'student' && !filterObj?.includeUnpublished) {
-    list = list.filter((l) => l.status === 'approved' || (l as any).status === 'published');
+    list = list.filter((l) => l.status === 'published');
   }
 
   if (filterObj?.moduleId) {
@@ -902,7 +877,13 @@ export function getKnowledgeGaps(userId: string): KnowledgeGap[] {
 }
 
 export function getHomeworkList(): HomeworkItem[] {
-  return loadDatabase().homework;
+  const user = getCurrentUser();
+  return loadDatabase().homework.filter(h => h.userId && (user.role === 'admin' || h.userId === user.id));
+}
+
+export function getMessages(): MessageItem[] {
+  const user = getCurrentUser();
+  return (loadDatabase().messages || []).filter(m => m.senderId === user.id || m.recipientId === user.id);
 }
 
 export function getNotifications(): AdminNotification[] {
@@ -925,6 +906,10 @@ export function getGraphData(): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const db = loadDatabase();
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
+
+  const currentUser = getCurrentUser();
+  const attempts = db.lessonAttempts.filter(a => a.userId === currentUser.id);
+  const gaps = db.knowledgeGaps.filter(g => g.userId === currentUser.id && g.status === 'needs-review');
 
   // Level 1: 18 Modules (Airspace Hubs) - 3 rows of 6 modules with generous spacing
   db.modules.forEach((m, idx) => {
@@ -961,12 +946,12 @@ export function getGraphData(): { nodes: GraphNode[]; edges: GraphEdge[] } {
       y: 820 + row * 220,
       prerequisites: [],
       futureApplications: [],
-      status: t.status === "approved" ? "studied" : "available",
+      status: db.lessons.some(l => l.topicId === t.id && attempts.some(a => a.lessonId === l.code)) ? "in_progress" : "available",
     });
   });
 
   // Level 3: Representative Key Competencies & Skills
-  const representativeSkills = (db.skills || []).slice(0, 16);
+  const representativeSkills = db.skills || [];
   representativeSkills.forEach((s, idx) => {
     const col = idx % 8;
     const row = Math.floor(idx / 8);
@@ -982,7 +967,7 @@ export function getGraphData(): { nodes: GraphNode[]; edges: GraphEdge[] } {
       y: 1300 + row * 180,
       prerequisites: [],
       futureApplications: [],
-      status: "in_progress",
+      status: gaps.some(g => g.skillId === s.id) ? "needs_review" : attempts.some(a => a.structuredReport?.assessment.questions.some(q => q.skillIds.includes(s.id))) ? "in_progress" : "available",
     });
   });
 
@@ -1001,51 +986,10 @@ export function getGraphData(): { nodes: GraphNode[]; edges: GraphEdge[] } {
     }
   });
 
-  // 2. Trunk air routes connecting prerequisite disciplines
-  const trunkModuleRoutes: Array<[string, string, string]> = [
-    ["M01", "M02", "Схемотехника и элементы"],
-    ["M01", "M03", "Сигналы и электросвязь"],
-    ["M01", "M06", "Сетевая адресация и биты"],
-    ["M01", "M09", "Двоичная логика ЭВМ"],
-    ["M01", "M10", "Алгоритмы вычислений"],
-    ["M02", "M03", "Физические каналы связи"],
-    ["M03", "M04", "Аналого-цифровое преобразование"],
-    ["M04", "M05", "Синхронные транспортные потоки"],
-    ["M05", "M06", "Оптические каналы для пакетов"],
-    ["M06", "M07", "Стек протоколов и маршрутизация"],
-    ["M07", "M08", "Беспроводная передача пакетов"],
-    ["M09", "M10", "Исполнение инструкций процессором"],
-    ["M10", "M11", "Реализация криптоалгоритмов"],
-    ["M11", "M12", "Симметричные и асимметричные шифры"],
-    ["M12", "M14", "Протоколы защищенного обмена"],
-    ["M13", "M15", "Аппаратные векторы атак"],
-    ["M14", "M17", "Защита периметра и шифрование"],
-    ["M15", "M17", "Мониторинг хостов и сети"],
-    ["M17", "M18", "Комплексные защищенные испытания"],
-  ];
-
-  trunkModuleRoutes.forEach(([from, to, label]) => {
-    if (nodeMap.has(from) && nodeMap.has(to)) {
-      edges.push({
-        id: `route-${from}-${to}`,
-        from,
-        to,
-        type: "interdisciplinary",
-        label,
-      });
-    }
+  // Structural membership is derived from the imported curriculum.
+  db.topics.forEach(t => {
+    if (nodeMap.has(t.moduleId) && nodeMap.has(t.id)) edges.push({id: `topic-${t.id}`, from: t.moduleId, to: t.id, type: 'related', label: 'Тема дисциплины'});
   });
-
-  // 3. Trajectory entrance from M01 to its first topic
-  if (nodeMap.has("M01") && nodeMap.has("M01-T01")) {
-    edges.push({
-      id: "route-M01-to-T01",
-      from: "M01",
-      to: "M01-T01",
-      type: "interdisciplinary",
-      label: "Старт программы M01",
-    });
-  }
 
   // 4. Connect representative skills to their parent topics
   representativeSkills.forEach((s) => {

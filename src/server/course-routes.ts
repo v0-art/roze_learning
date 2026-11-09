@@ -1,0 +1,96 @@
+import {Router} from 'express';import type {Pool,PoolClient} from 'pg';
+import {AccessDenied,grantMentorRole,revokeMentorRole,createCourse,addMentorToCourse,inviteMentorByUsername,updateMentorPermissions,enrollStudent,archiveCourseStudent,listAccessibleCourses,listStudentAttempts,readStudentAttempt,listAssignedStudents,listCourseRoster,listCourseMentors,listOwnMentors,listCourseModules,listModuleTopics,listTopicLessons,readCourseLesson} from './repositories/courses';
+import {listMentors,createMentorAccount,createStudentAccount} from './repositories/account-management';
+import {listCourseFiles,addCourseFile,updateCourseFile,archiveCourseFile,readCourseFile} from './repositories/library';
+import {listMessages,sendMessage,markMessageRead} from './repositories/messages';
+import {listStudentHomework,submitHomework,reviewHomework} from './repositories/homework';
+import {reviewLessonAttempt} from './repositories/attempt-review';
+import {getProfile,updateProfile} from './repositories/profile';
+import {listStudentNotifications} from './repositories/notifications';
+import {createLessonSnapshot} from './repositories/snapshots';
+import {submitLessonReport} from './repositories/reports';
+import {getEditableLesson,editLesson,publishLesson} from './repositories/lesson-editor';
+import {readModuleGraph,decideModuleRelation,addModuleRelation,previewModuleGraph,importModuleGraph,decideModuleRelations} from './repositories/module-graph';
+import {listExams,listExamTickets,createExam,createTicket,publishExam,listAssessments,submitAssessment,reviewAssessment,grantAssessmentRetake} from './repositories/assessments';
+import {createModule,createTopic,createLesson} from './repositories/curriculum';
+import {readCurriculum} from './repositories/curriculum-read';
+import {exportCourse} from './repositories/course-export';
+import {importDraftCourse} from './repositories/course-import';
+
+/** Mount only after a trusted authentication middleware sets req.identity. */
+export function createCourseRouter(pool:Pool):Router {
+ const router=Router();
+ const validId=(id:unknown):id is string=>typeof id==='string' && /^[a-zA-Z0-9_-]{1,80}$/.test(id);
+ const handler=(operation:(db:PoolClient,actor:string,req:any)=>Promise<unknown>)=>async(req:any,res:any)=>{
+  const actor=req.identity?.id;if(!validId(actor))return res.status(401).json({error:'Требуется вход.'});
+  let db:PoolClient|undefined;
+  try {db=await pool.connect();const result=await operation(db,actor,req);return res.json(result ?? {success:true});}
+  catch(error:any){if(error instanceof AccessDenied)return res.status(403).json({error:'Доступ запрещён.'});if(error?.code==='CONFLICT')return res.status(409).json({error:'Запись уже изменена. Обновите страницу.'});if(error?.code==='23505')return res.status(409).json({error:'Такая запись уже существует.'});if(error?.code==='23503')return res.status(400).json({error:'Связанный объект отсутствует или не относится к курсу.'});if(error?.code==='NOT_FOUND')return res.status(404).json({error:'Запись недоступна.'});if(error?.code==='INVALID_INPUT')return res.status(400).json({error:typeof error.message==='string'&&error.message!=='Invalid ID'?error.message.slice(0,2000):'Проверьте указанные данные.'});console.error('Course operation failed',error?.code || error?.name || 'unknown');return res.status(500).json({error:'Не удалось выполнить операцию.'});}
+  finally {db?.release();}
+ };
+ const requireId=(value:unknown)=>{if(!validId(value)){const e:any=new Error('Invalid ID');e.code='INVALID_INPUT';throw e;}return value;};
+ router.get('/profile',handler((db,actor)=>getProfile(db,actor)));
+ router.post('/profile',handler((db,actor,req)=>updateProfile(db,actor,req.body?.displayName,req.body?.avatarUrl)));
+ router.get('/courses',handler((db,actor)=>listAccessibleCourses(db,actor)));
+ router.post('/courses',handler((db,actor,req)=>{const id=requireId(req.body?.id);const title=req.body?.title;if(typeof title!=='string'||!title.trim()||title.length>200){const e:any=new Error('Invalid title');e.code='INVALID_INPUT';throw e;}return createCourse(db,actor,id,title.trim())}));
+ router.post('/courses/:courseId/mentors',handler((db,actor,req)=>addMentorToCourse(db,actor,requireId(req.params.courseId),requireId(req.body?.mentorId))));
+ router.post('/courses/:courseId/mentors/invite',handler((db,actor,req)=>inviteMentorByUsername(db,actor,requireId(req.params.courseId),req.body?.username)));
+ router.get('/courses/:courseId/mentors',handler((db,actor,req)=>listCourseMentors(db,actor,requireId(req.params.courseId))));
+ router.get('/courses/:courseId/my-mentors',handler((db,actor,req)=>listOwnMentors(db,actor,requireId(req.params.courseId))));
+ router.post('/courses/:courseId/mentors/:mentorId/permissions',handler((db,actor,req)=>updateMentorPermissions(db,actor,requireId(req.params.courseId),requireId(req.params.mentorId),{manageContent:req.body?.manageContent,manageMentors:req.body?.manageMentors,manageStudents:req.body?.manageStudents,review:req.body?.review})));
+ router.post('/courses/:courseId/students',handler((db,actor,req)=>enrollStudent(db,actor,requireId(req.params.courseId),requireId(req.body?.studentId),requireId(req.body?.mentorId))));
+ router.post('/courses/:courseId/student-accounts',handler((db,actor,req)=>createStudentAccount(db,actor,requireId(req.params.courseId),requireId(req.body?.mentorId),{id:requireId(req.body?.id),username:req.body?.username,displayName:req.body?.displayName,password:req.body?.password})));
+ router.post('/courses/:courseId/students/:studentId/archive',handler((db,actor,req)=>archiveCourseStudent(db,actor,requireId(req.params.courseId),requireId(req.params.studentId))));
+ router.get('/courses/:courseId/modules',handler((db,actor,req)=>listCourseModules(db,actor,requireId(req.params.courseId))));
+ router.get('/courses/:courseId/curriculum',handler((db,actor,req)=>readCurriculum(db,actor,requireId(req.params.courseId))));
+ router.post('/courses/:courseId/import-draft',handler((db,actor,req)=>importDraftCourse(db,actor,requireId(req.params.courseId),req.body?.fileName,req.body?.rawText)));
+ router.get('/courses/:courseId/export',async(req:any,res)=>{let db:PoolClient|undefined;try{const actor=requireId(req.identity?.id),courseId=requireId(req.params.courseId);db=await pool.connect();const archive=await exportCourse(db,actor,courseId);res.setHeader('Content-Type','application/zip');res.setHeader('Content-Disposition',`attachment; filename="course-${courseId}.zip"`);return res.send(archive)}catch(error:any){if(error instanceof AccessDenied)return res.sendStatus(403);if(error?.code==='INVALID_INPUT')return res.sendStatus(400);return res.sendStatus(500)}finally{db?.release()}});
+ router.post('/courses/:courseId/modules',handler((db,actor,req)=>createModule(db,actor,requireId(req.params.courseId),{id:req.body?.id,title:req.body?.title,position:req.body?.position})));
+ router.get('/courses/:courseId/module-graph',handler((db,actor,req)=>readModuleGraph(db,actor,requireId(req.params.courseId))));
+ router.post('/courses/:courseId/module-graph',handler((db,actor,req)=>addModuleRelation(db,actor,requireId(req.params.courseId),{source:req.body?.source,target:req.body?.target,relation:req.body?.relation,label:req.body?.label,transfers:req.body?.transfers})));
+ router.post('/courses/:courseId/module-graph/preview',handler((db,actor,req)=>previewModuleGraph(db,actor,requireId(req.params.courseId),req.body?.rawText)));
+ router.post('/courses/:courseId/module-graph/import',handler((db,actor,req)=>importModuleGraph(db,actor,requireId(req.params.courseId),req.body?.fileName,req.body?.rawText)));
+ router.post('/courses/:courseId/module-graph/decisions',handler((db,actor,req)=>decideModuleRelations(db,actor,requireId(req.params.courseId),req.body?.ids,req.body?.status)));
+ router.get('/courses/:courseId/exams',handler((db,actor,req)=>listExams(db,actor,requireId(req.params.courseId))));
+ router.post('/courses/:courseId/exams',handler((db,actor,req)=>createExam(db,actor,requireId(req.params.courseId),{id:req.body?.id,moduleId:req.body?.moduleId,title:req.body?.title,type:req.body?.type})));
+ router.get('/courses/:courseId/exams/:examId/tickets',handler((db,actor,req)=>listExamTickets(db,actor,requireId(req.params.courseId),requireId(req.params.examId))));
+ router.post('/courses/:courseId/exams/:examId/tickets',handler((db,actor,req)=>createTicket(db,actor,requireId(req.params.courseId),requireId(req.params.examId),{id:req.body?.id,title:req.body?.title,theory1:req.body?.theory1,theory2:req.body?.theory2,practical:req.body?.practical})));
+ router.post('/courses/:courseId/exams/:examId/publish',handler((db,actor,req)=>publishExam(db,actor,requireId(req.params.courseId),requireId(req.params.examId))));
+ router.post('/courses/:courseId/exams/:examId/attempts',handler((db,actor,req)=>submitAssessment(db,actor,requireId(req.params.courseId),requireId(req.params.examId),{theory1:req.body?.theory1,theory2:req.body?.theory2,practical:req.body?.practical,notes:req.body?.notes})));
+ router.get('/courses/:courseId/students/:studentId/assessments',handler((db,actor,req)=>listAssessments(db,actor,requireId(req.params.courseId),requireId(req.params.studentId))));
+ router.post('/courses/:courseId/students/:studentId/assessments/:assessmentId/review',handler((db,actor,req)=>reviewAssessment(db,actor,requireId(req.params.courseId),requireId(req.params.studentId),requireId(req.params.assessmentId),req.body?.status,req.body?.feedback)));
+ router.post('/courses/:courseId/students/:studentId/exams/:examId/retake',handler((db,actor,req)=>grantAssessmentRetake(db,actor,requireId(req.params.courseId),requireId(req.params.studentId),requireId(req.params.examId),req.body?.reason)));
+ router.post('/courses/:courseId/module-graph/:relationId/decision',handler((db,actor,req)=>decideModuleRelation(db,actor,requireId(req.params.courseId),requireId(req.params.relationId),req.body?.status)));
+ router.get('/courses/:courseId/modules/:moduleId/topics',handler((db,actor,req)=>listModuleTopics(db,actor,requireId(req.params.courseId),requireId(req.params.moduleId))));
+ router.post('/courses/:courseId/modules/:moduleId/topics',handler((db,actor,req)=>createTopic(db,actor,requireId(req.params.courseId),requireId(req.params.moduleId),{id:req.body?.id,title:req.body?.title,position:req.body?.position})));
+ router.get('/courses/:courseId/topics/:topicId/lessons',handler((db,actor,req)=>listTopicLessons(db,actor,requireId(req.params.courseId),requireId(req.params.topicId))));
+ router.post('/courses/:courseId/topics/:topicId/lessons',handler((db,actor,req)=>createLesson(db,actor,requireId(req.params.courseId),requireId(req.params.topicId),{id:req.body?.id,title:req.body?.title,position:req.body?.position,prompt:req.body?.prompt,previousLessonId:req.body?.previousLessonId})));
+ router.get('/courses/:courseId/messages',handler((db,actor,req)=>listMessages(db,actor,requireId(req.params.courseId))));
+ router.post('/courses/:courseId/messages',handler((db,actor,req)=>sendMessage(db,actor,requireId(req.params.courseId),requireId(req.body?.recipientId),req.body?.content)));
+ router.post('/courses/:courseId/messages/:messageId/read',handler((db,actor,req)=>markMessageRead(db,actor,requireId(req.params.courseId),requireId(req.params.messageId))));
+ router.get('/courses/:courseId/files',handler((db,actor,req)=>listCourseFiles(db,actor,requireId(req.params.courseId))));
+ router.post('/courses/:courseId/files',handler((db,actor,req)=>addCourseFile(db,actor,requireId(req.params.courseId),{name:req.body?.name,linkedEntity:req.body?.linkedEntity,contentBase64:req.body?.contentBase64})));
+ router.post('/courses/:courseId/files/:fileId/update',handler((db,actor,req)=>updateCourseFile(db,actor,requireId(req.params.courseId),requireId(req.params.fileId),{name:req.body?.name,linkedEntity:req.body?.linkedEntity,contentBase64:req.body?.contentBase64})));
+ router.post('/courses/:courseId/files/:fileId/archive',handler((db,actor,req)=>archiveCourseFile(db,actor,requireId(req.params.courseId),requireId(req.params.fileId))));
+ router.get('/courses/:courseId/files/:fileId/download',async(req:any,res)=>{let db:PoolClient|undefined;try{const actor=requireId(req.identity?.id);db=await pool.connect();const file=await readCourseFile(db,actor,requireId(req.params.courseId),requireId(req.params.fileId));res.setHeader('Content-Type','application/octet-stream');res.setHeader('Content-Disposition',`attachment; filename*=UTF-8''${encodeURIComponent(file.filename)}`);return res.send(file.file_bytes)}catch(error:any){if(error instanceof AccessDenied)return res.sendStatus(403);if(error?.code==='NOT_FOUND')return res.sendStatus(404);if(error?.code==='INVALID_INPUT')return res.sendStatus(400);return res.sendStatus(500)}finally{db?.release()}});
+ router.get('/courses/:courseId/students',handler((db,actor,req)=>listAssignedStudents(db,actor,requireId(req.params.courseId))));
+ router.get('/courses/:courseId/roster',handler((db,actor,req)=>listCourseRoster(db,actor,requireId(req.params.courseId))));
+ router.get('/courses/:courseId/lessons/:lessonId',handler(async(db,actor,req)=>{const lesson=await readCourseLesson(db,actor,requireId(req.params.courseId),requireId(req.params.lessonId));if(!lesson){const e:any=new Error('Not found');e.code='NOT_FOUND';throw e;}return lesson;}));
+ router.post('/courses/:courseId/lessons/:lessonId/snapshot',handler((db,actor,req)=>createLessonSnapshot(db,actor,requireId(req.params.courseId),requireId(req.params.lessonId))));
+ router.get('/courses/:courseId/lessons/:lessonId/edit',handler((db,actor,req)=>getEditableLesson(db,actor,requireId(req.params.courseId),requireId(req.params.lessonId))));
+ router.post('/courses/:courseId/lessons/:lessonId/edit',handler((db,actor,req)=>editLesson(db,actor,requireId(req.params.courseId),requireId(req.params.lessonId),{title:req.body?.title,prompt:req.body?.prompt,version:req.body?.version,expectedVersionId:req.body?.expectedVersionId})));
+ router.post('/courses/:courseId/lessons/:lessonId/publish',handler((db,actor,req)=>publishLesson(db,actor,requireId(req.params.courseId),requireId(req.params.lessonId),req.body?.expectedVersionId)));
+ router.post('/courses/:courseId/lessons/:lessonId/reports',handler((db,actor,req)=>submitLessonReport(db,actor,requireId(req.params.courseId),requireId(req.params.lessonId),requireId(req.body?.snapshotId),req.body?.rawText)));
+ router.get('/courses/:courseId/students/:studentId/attempts',handler((db,actor,req)=>listStudentAttempts(db,actor,requireId(req.params.courseId),requireId(req.params.studentId))));
+ router.get('/courses/:courseId/students/:studentId/attempts/:attemptId',handler(async(db,actor,req)=>{const attempt=await readStudentAttempt(db,actor,requireId(req.params.courseId),requireId(req.params.studentId),requireId(req.params.attemptId));if(!attempt)throw Object.assign(new Error('Отчёт не найден.'),{code:'NOT_FOUND'});return attempt}));
+ router.post('/courses/:courseId/students/:studentId/attempts/:attemptId/review',handler((db,actor,req)=>reviewLessonAttempt(db,actor,requireId(req.params.courseId),requireId(req.params.studentId),requireId(req.params.attemptId),req.body?.score,req.body?.feedback,req.body?.reason)));
+ router.get('/courses/:courseId/students/:studentId/homework',handler((db,actor,req)=>listStudentHomework(db,actor,requireId(req.params.courseId),requireId(req.params.studentId))));
+ router.get('/courses/:courseId/students/:studentId/notifications',handler((db,actor,req)=>listStudentNotifications(db,actor,requireId(req.params.courseId),requireId(req.params.studentId))));
+ router.post('/courses/:courseId/homework/:homeworkId/submit',handler((db,actor,req)=>submitHomework(db,actor,requireId(req.params.courseId),requireId(req.params.homeworkId),req.body?.answer)));
+ router.post('/courses/:courseId/students/:studentId/homework/:homeworkId/review',handler((db,actor,req)=>reviewHomework(db,actor,requireId(req.params.courseId),requireId(req.params.studentId),requireId(req.params.homeworkId),req.body?.status,req.body?.feedback)));
+ router.post('/platform/mentors/:accountId/grant',handler((db,actor,req)=>grantMentorRole(db,actor,requireId(req.params.accountId))));
+ router.post('/platform/mentors/:accountId/revoke',handler((db,actor,req)=>revokeMentorRole(db,actor,requireId(req.params.accountId))));
+ router.get('/platform/mentors',handler((db,actor)=>listMentors(db,actor)));
+ router.post('/platform/mentors',handler((db,actor,req)=>createMentorAccount(db,actor,{id:requireId(req.body?.id),username:req.body?.username,displayName:req.body?.displayName,password:req.body?.password})));
+ return router;
+}

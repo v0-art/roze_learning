@@ -1,0 +1,58 @@
+import crypto from 'node:crypto';import type {PoolClient} from 'pg';import {classifyScore} from '../../core/gradingEngine';import {AccessDenied,listCourseModules,requireMentor,requireStudentAccess} from './courses';
+const invalid=()=>Object.assign(new Error('Некорректные данные аттестации.'),{code:'INVALID_INPUT'});
+const missing=()=>Object.assign(new Error('Аттестация не найдена.'),{code:'NOT_FOUND'});
+export async function listExams(db:PoolClient,actor:string,courseId:string){
+ await listCourseModules(db,actor,courseId);let mentor=false;try{await requireMentor(db,actor,courseId,'can_manage_content');mentor=true}catch(error){if(!(error instanceof AccessDenied))throw error}
+ return (await db.query("SELECT id,module_id,title,definition_type,status,after_topic_id FROM course_exams WHERE course_id=$1 AND ($2 OR status='published') ORDER BY module_id,id",[courseId,mentor])).rows;
+}
+export async function listExamTickets(db:PoolClient,actor:string,courseId:string,examId:string){
+ const exams=await listExams(db,actor,courseId);if(!exams.some(e=>e.id===examId))throw missing();return (await db.query('SELECT id,title,topic_id,theory_1,theory_2,practical,weight_theory_1,weight_theory_2,weight_practical FROM exam_tickets WHERE course_id=$1 AND exam_id=$2 ORDER BY id',[courseId,examId])).rows;
+}
+export async function createExam(db:PoolClient,mentor:string,courseId:string,input:{id:unknown;moduleId:unknown;title:unknown;type:unknown}){
+ if(typeof input.id!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(input.id)||typeof input.moduleId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(input.moduleId)||typeof input.title!=='string'||!input.title.trim()||input.title.length>200||!['control','exam'].includes(input.type as string))throw invalid();
+ await db.query('BEGIN');try{await requireMentor(db,mentor,courseId,'can_manage_content');await db.query("INSERT INTO course_exams(course_id,id,module_id,title,definition_type,status) VALUES($1,$2,$3,$4,$5,'draft')",[courseId,input.id,input.moduleId,input.title.trim(),input.type]);await db.query("INSERT INTO course_audit_events(course_id,actor_id,action,target_type,target_id,reason) VALUES($1,$2,'CREATE_EXAM','EXAM',$3,$4)",[courseId,mentor,input.id,input.title.trim()]);await db.query('COMMIT');return {id:input.id,status:'draft'}}catch(error){await db.query('ROLLBACK');throw error}
+}
+export async function createTicket(db:PoolClient,mentor:string,courseId:string,examId:string,input:{id:unknown;title:unknown;theory1:unknown;theory2:unknown;practical:unknown}){
+ if(typeof input.id!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(input.id)||typeof input.title!=='string'||input.title.length>200||[input.theory1,input.theory2,input.practical].some(x=>typeof x!=='string'||!x.trim()||x.length>20000))throw invalid();
+ await db.query('BEGIN');try{await requireMentor(db,mentor,courseId,'can_manage_content');const exam=await db.query("SELECT status FROM course_exams WHERE course_id=$1 AND id=$2 FOR UPDATE",[courseId,examId]);if(!exam.rowCount)throw missing();if(exam.rows[0].status==='published')throw invalid();
+  await db.query('INSERT INTO exam_tickets(course_id,exam_id,id,title,theory_1,theory_2,practical) VALUES($1,$2,$3,$4,$5,$6,$7)',[courseId,examId,input.id,input.title,input.theory1,input.theory2,input.practical]);await db.query('COMMIT');return {id:input.id};
+ }catch(error){await db.query('ROLLBACK');throw error}
+}
+export async function publishExam(db:PoolClient,mentor:string,courseId:string,examId:string){
+ await db.query('BEGIN');try{await requireMentor(db,mentor,courseId,'can_manage_content');const exam=await db.query('SELECT status,theory_unique_count,practical_unique_count FROM course_exams WHERE course_id=$1 AND id=$2 FOR UPDATE',[courseId,examId]);if(!exam.rowCount)throw missing();if(!(await db.query('SELECT 1 FROM exam_tickets WHERE course_id=$1 AND exam_id=$2 LIMIT 1',[courseId,examId])).rowCount)throw invalid();
+  const expected=exam.rows[0];if(expected.theory_unique_count!==null||expected.practical_unique_count!==null){const counts=await db.query(`SELECT (SELECT count(*)::int FROM (SELECT theory_1 AS question FROM exam_tickets WHERE course_id=$1 AND exam_id=$2 UNION SELECT theory_2 FROM exam_tickets WHERE course_id=$1 AND exam_id=$2) q) AS theory,(SELECT count(DISTINCT practical)::int FROM exam_tickets WHERE course_id=$1 AND exam_id=$2) AS practical`,[courseId,examId]);if((expected.theory_unique_count!==null&&counts.rows[0].theory!==expected.theory_unique_count)||(expected.practical_unique_count!==null&&counts.rows[0].practical!==expected.practical_unique_count))throw Object.assign(new Error('Количество уникальных вопросов или заданий не соответствует требованиям аттестации.'),{code:'INVALID_INPUT'});}
+  await db.query("UPDATE course_exams SET status='published' WHERE course_id=$1 AND id=$2",[courseId,examId]);await db.query("INSERT INTO course_audit_events(course_id,actor_id,action,target_type,target_id,previous_value,new_value) VALUES($1,$2,'PUBLISH_EXAM','EXAM',$3,$4,'published')",[courseId,mentor,examId,exam.rows[0].status]);await db.query('COMMIT');return {id:examId,status:'published'};
+ }catch(error){await db.query('ROLLBACK');throw error}
+}
+export async function listAssessments(db:PoolClient,actor:string,courseId:string,student:string){
+ await requireStudentAccess(db,actor,courseId,student);return (await db.query('SELECT id,exam_id,attempt_number,score,max_score,percentage,grade,review_status,feedback,requires_intervention,submitted_at FROM course_assessments WHERE course_id=$1 AND student_id=$2 ORDER BY submitted_at DESC,id',[courseId,student])).rows;
+}
+export async function submitAssessment(db:PoolClient,student:string,courseId:string,examId:string,input:{theory1:unknown;theory2:unknown;practical:unknown;notes:unknown}){
+ const {theory1,theory2,practical,notes}=input;if(typeof theory1!=='number'||!Number.isFinite(theory1)||theory1<0||theory1>30||typeof theory2!=='number'||!Number.isFinite(theory2)||theory2<0||theory2>30||typeof practical!=='number'||!Number.isFinite(practical)||practical<0||practical>40||typeof notes!=='string'||!notes.trim()||notes.length>20000)throw invalid();
+ await db.query('BEGIN');try{await requireStudentAccess(db,student,courseId,student);await db.query('SELECT 1 FROM course_students WHERE course_id=$1 AND student_id=$2 FOR UPDATE',[courseId,student]);
+  const exam=await db.query("SELECT title,definition_type FROM course_exams WHERE course_id=$1 AND id=$2 AND status='published'",[courseId,examId]);if(!exam.rowCount)throw missing();
+  const attempts=await db.query('SELECT score,max_score FROM course_assessments WHERE course_id=$1 AND student_id=$2 AND exam_id=$3',[courseId,student,examId]);const grants=await db.query('SELECT count(*)::int n FROM assessment_retake_grants WHERE course_id=$1 AND student_id=$2 AND exam_id=$3',[courseId,student,examId]);
+  if(attempts.rowCount!>=4+grants.rows[0].n||attempts.rows.some(a=>Number(a.score)/Number(a.max_score)>=0.5))throw new AccessDenied();
+  const number=attempts.rowCount!+1,grade=classifyScore(theory1+theory2+practical,100,number),id=crypto.randomUUID();
+  await db.query(`INSERT INTO course_assessments(id,course_id,exam_id,student_id,attempt_number,score,max_score,review_status,target_title,legacy_type,percentage,grade,requires_intervention,theory_1_score,theory_2_score,practical_score,answers_notes) VALUES($1,$2,$3,$4,$5,$6,100,'self_reported',$7,$8,$9,$10,$11,$12,$13,$14,$15)`,[id,courseId,examId,student,number,grade.score,exam.rows[0].title,exam.rows[0].definition_type==='exam'?'exam':'control_work',grade.percentage,grade.grade,grade.requiresIntervention,theory1,theory2,practical,notes.trim()]);
+  await db.query(`INSERT INTO course_notifications(id,course_id,student_id,title,description,event_type,related_entity_id,status,score,max_score) VALUES($1,$2,$3,$4,$5,$6,$7,'unread',$8,100)`,[crypto.randomUUID(),courseId,student,`Отчёт: ${exam.rows[0].title}`,`Попытка ${number}, результат ${grade.score}/100; самоотчёт ученика.`,number>1?'retake_alert':exam.rows[0].definition_type,id,grade.score]);
+  await db.query('COMMIT');return {id,attemptNumber:number,...grade,reviewStatus:'self_reported'};
+ }catch(error){await db.query('ROLLBACK');throw error}
+}
+export async function reviewAssessment(db:PoolClient,mentor:string,courseId:string,student:string,id:string,status:unknown,feedback:unknown){
+ if(mentor===student)throw new AccessDenied();if(!['mentor_confirmed','needs_correction'].includes(status as string)||typeof feedback!=='string'||!feedback.trim()||feedback.length>20000)throw invalid();
+ await db.query('BEGIN');try{await requireStudentAccess(db,mentor,courseId,student);const old=await db.query('SELECT exam_id,review_status FROM course_assessments WHERE course_id=$1 AND student_id=$2 AND id=$3 FOR UPDATE',[courseId,student,id]);if(!old.rowCount)throw missing();
+  await db.query('UPDATE course_assessments SET review_status=$4,feedback=$5 WHERE course_id=$1 AND student_id=$2 AND id=$3',[courseId,student,id,status,feedback.trim()]);
+  await db.query('INSERT INTO course_messages(course_id,id,sender_id,recipient_id,subject,content) VALUES($1,$2,$3,$4,$5,$6)',[courseId,crypto.randomUUID(),mentor,student,`Аттестация ${old.rows[0].exam_id}`,feedback.trim()]);
+  await db.query("INSERT INTO course_audit_events(course_id,actor_id,action,target_type,target_id,reason,previous_value,new_value) VALUES($1,$2,'MENTOR_CONFIRM_ASSESSMENT','ASSESSMENT',$3,$4,$5,$6)",[courseId,mentor,id,feedback.trim(),old.rows[0].review_status,status]);await db.query('COMMIT');return {success:true};
+ }catch(error){await db.query('ROLLBACK');throw error}
+}
+export async function grantAssessmentRetake(db:PoolClient,mentor:string,courseId:string,student:string,examId:string,reason:unknown){
+ if(mentor===student)throw new AccessDenied();if(typeof reason!=='string'||!reason.trim()||reason.length>4000)throw invalid();
+ await db.query('BEGIN');try{await requireStudentAccess(db,mentor,courseId,student);await db.query('SELECT 1 FROM course_students WHERE course_id=$1 AND student_id=$2 FOR UPDATE',[courseId,student]);
+  const attempts=await db.query('SELECT score,max_score FROM course_assessments WHERE course_id=$1 AND student_id=$2 AND exam_id=$3',[courseId,student,examId]);const grants=await db.query('SELECT count(*)::int n FROM assessment_retake_grants WHERE course_id=$1 AND student_id=$2 AND exam_id=$3',[courseId,student,examId]);
+  if(attempts.rowCount!<4+grants.rows[0].n||attempts.rows.some(a=>Number(a.score)/Number(a.max_score)>=0.5))throw invalid();
+  const id=crypto.randomUUID();await db.query('INSERT INTO assessment_retake_grants(course_id,id,student_id,exam_id,reason,created_at) VALUES($1,$2,$3,$4,$5,now())',[courseId,id,student,examId,reason.trim()]);
+  await db.query("INSERT INTO course_audit_events(course_id,actor_id,action,target_type,target_id,reason) VALUES($1,$2,'GRANT_EXTRA_RETAKE','ASSESSMENT',$3,$4)",[courseId,mentor,examId,reason.trim()]);await db.query('COMMIT');return {id};
+ }catch(error){await db.query('ROLLBACK');throw error}
+}

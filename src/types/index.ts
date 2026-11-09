@@ -9,13 +9,14 @@ export interface User {
   id: string;
   email: string;
   displayName: string;
+  isDemo?: boolean;
   role: UserRole;
   avatarUrl?: string;
   createdAt: string;
   lastSeenAt: string;
 }
 
-export type ContentStatus = 'draft' | 'under_review' | 'published' | 'archived';
+export type ContentStatus = 'draft' | 'under_review' | 'approved' | 'published' | 'archived';
 
 export type LessonAvailabilityStatus =
   | 'not_published'
@@ -41,6 +42,7 @@ export interface ModuleItem {
   order: number;
   title: string;
   shortDescription: string;
+  description?: string;
   introduction: string;
   topicsCount: number;
   publishedLessonsCount: number;
@@ -125,15 +127,20 @@ export interface QuestionResult {
   result: 'correct' | 'incorrect' | 'partial';
   feedback: string;
   needsRecheck: boolean;
+  questionText?: string;
+  studentAnswer?: string;
+  pointsAwarded?: number;
+  maxPoints?: number;
 }
 
 export interface HomeworkItem {
   id: string;
   lessonId: string;
+  userId?: string;
   title: string;
   description: string;
   skillIds?: string[];
-  status?: 'assigned' | 'submitted' | 'verified' | 'rejected';
+  status?: 'assigned' | 'submitted' | 'verified' | 'rejected' | 'needs_revision' | 'not_submitted' | 'checked';
   studentAnswer?: string;
   mentorFeedback?: string;
   assignedAt?: string;
@@ -147,6 +154,7 @@ export interface KnowledgeGap {
   skillName?: string;
   description: string;
   sourceLessonId: string;
+  sourceQuestionId?: string;
   status: 'needs-review' | 'resolved';
   mandatoryNextCheck: boolean;
   createdAt: string;
@@ -195,6 +203,7 @@ export interface StructuredReport {
   }>;
   nextLessonInstructions: NextLessonInstructions;
   studentNotes?: string;
+  entryControl?: { previousLessonId: string; homeworkResults: Array<{homeworkId: string; status: 'checked' | 'needs_revision' | 'not_submitted'; feedback: string; evidence?: string; errors?: string[]; skillIds?: string[]; needsRevision?: boolean}>; recheckResults: Array<{sourceQuestionId?: string; sourceLessonId?: string; sourceGapId?: string; status: 'persists' | 'resolved' | 'resolved_preliminary'; evidence: string}> };
 }
 
 export interface LessonAttempt {
@@ -308,7 +317,7 @@ export interface ExamTicket {
 export interface LibraryFileItem {
   id: string;
   name: string;
-  type: 'json' | 'markdown' | 'zip' | 'schema';
+  type: 'json' | 'markdown' | 'zip' | 'schema' | 'pdf';
   sizeBytes: number;
   checksumSha256: string;
   uploadedAt: string;
@@ -318,6 +327,7 @@ export interface LibraryFileItem {
   status: 'active' | 'archived' | 'superseded';
   contentPreview?: string;
   contentPath?: string;
+  contentBase64?: string;
 }
 
 export interface ImportDiffRecord {
@@ -348,7 +358,7 @@ export interface ImportSummaryResult {
 
 export interface AdminNotification {
   id: string;
-  eventType: 'control_work' | 'exam' | 'retake_alert' | 'critical_gap' | 'student_message' | 'report_submitted';
+  eventType: 'control_work' | 'exam' | 'retake_alert' | 'critical_gap' | 'student_message' | 'report_submitted' | 'homework_submitted';
   title: string;
   description: string;
   studentId: string;
@@ -388,4 +398,5 @@ export interface MessageItem {
   };
   resolved: boolean;
   createdAt: string;
+  readAt?: string;
 }

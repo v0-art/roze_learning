@@ -1,0 +1,16 @@
+import React,{useEffect,useState} from 'react';import {KnowledgeGraph} from '../components/KnowledgeGraph';import type {ModuleItem,TopicItem,RelationItem,SkillItem} from '../types';import type {ModuleRelation} from '../core/moduleGraph';import {part,relationalRequest} from '../services/relational';
+
+type Data={modules:ModuleItem[];topics:TopicItem[];relations:RelationItem[];skills:SkillItem[];edges:ModuleRelation[]};
+export function RelationalMap({courseId,onExit}:{courseId:string;onExit:()=>void}){
+ const [data,setData]=useState<Data|null>(null),[error,setError]=useState('');
+ useEffect(()=>{let active=true;setData(null);setError('');const base=`/courses/${part(courseId)}`;void Promise.all([relationalRequest<any>(`${base}/curriculum`),relationalRequest<any>(`${base}/module-graph`)]).then(([plan,graph])=>{if(!active)return;
+  const modules:ModuleItem[]=plan.modules.map((m:any)=>({id:m.id,code:m.id,order:m.position,title:m.title,shortDescription:m.short_description||'',introduction:m.introduction||'',topicsCount:plan.topics.filter((t:any)=>t.module_id===m.id).length,publishedLessonsCount:plan.lessons.filter((l:any)=>l.module_id===m.id&&l.status==='published').length,prerequisites:m.prerequisites||[],status:m.status,whyItMatters:m.why_it_matters,whatIsStudied:m.what_is_studied,futureApplications:m.applications||[]}));
+  const topics:TopicItem[]=plan.topics.map((t:any)=>({id:t.id,code:t.id,moduleId:t.module_id,order:t.position,title:t.title,description:t.description||'',learningObjectives:t.objectives||[],skillsTaught:t.skills||[],status:t.status,controlWorkId:t.control_work_id||undefined}));
+  const relations:RelationItem[]=plan.relations.map((r:any)=>({id:r.id,fromId:r.source_node_id,toId:r.target_node_id,type:r.relation_type,description:r.description}));
+  const skills:SkillItem[]=plan.skills.map((s:any)=>({id:s.id,code:s.id,name:s.title,description:s.description||'',topicId:s.topic_id||'',moduleId:s.module_id,lessonId:s.lesson_id||'',status:s.status}));
+  const edges:ModuleRelation[]=graph.relations.map((r:any)=>({id:r.id,source:r.source_module_id,target:r.target_module_id,relation:r.relation_type,displayTier:r.display_tier==='overview'?'overview':'focus',label:r.label||'',knowledgeTransfers:(r.knowledge_transfers||[]).map((t:any)=>({sourceKnowledge:t.concept,targetApplication:t.explanation})),evidenceStatus:r.evidence_status||'expert-proposed-extension',evidenceNote:r.evidence_note||'',approvalStatus:r.approval_status,isAccessGate:false,directionality:r.directionality==='undirected'?'undirected':'source-to-target'}));
+  setData({modules,topics,relations,skills,edges});
+ }).catch(e=>{if(active)setError(e instanceof Error?e.message:'Не удалось загрузить карту знаний.')});return()=>{active=false}},[courseId]);
+ if(error)return <p role="alert" className="p-5 text-rose-300">{error}</p>;if(!data)return <p className="p-5 text-violet-200">Загружаем карту знаний…</p>;
+ return <div className="h-[calc(100vh-8rem)] min-h-[32rem] overflow-hidden rounded-2xl border border-violet-300/15"><KnowledgeGraph modules={data.modules} topics={data.topics} relations={data.relations} skills={data.skills} moduleGraphEdges={data.edges} mentor={false} onExit={onExit}/></div>;
+}

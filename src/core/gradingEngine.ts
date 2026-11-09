@@ -37,15 +37,15 @@ export function classifyScore(score: number, maxScore: number, attemptNumber: nu
   let gradeLabelRu: string;
   let isPassing = false;
 
-  if (percentage < 50) {
+  if (safeScore / maxScore < 0.5) {
     grade = 'not_passed';
     gradeLabelRu = 'Не зачтено';
     isPassing = false;
-  } else if (percentage < 70) {
+  } else if (safeScore / maxScore < 0.7) {
     grade = 'passed';
     gradeLabelRu = 'Зачтено';
     isPassing = true;
-  } else if (percentage < 80) {
+  } else if (safeScore / maxScore < 0.8) {
     grade = 'good';
     gradeLabelRu = 'Хорошо';
     isPassing = true;

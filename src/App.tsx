@@ -4,7 +4,9 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Navbar } from "./components/Navbar";
+import { ProfileView } from "./views/ProfileView";
 import { DashboardView } from "./views/DashboardView";
 import { CourseCatalogView } from "./views/CourseCatalogView";
 import { ModuleDetailView } from "./views/ModuleDetailView";
@@ -18,6 +20,7 @@ import { AdminOverviewView } from "./views/AdminOverviewView";
 import { AdminReportsView } from "./views/AdminReportsView";
 import { AdminContentView } from "./views/AdminContentView";
 import { AdminLibraryView } from "./views/AdminLibraryView";
+import { AdminUsersView } from './views/AdminUsersView';
 import { AdminExamsView } from "./views/AdminExamsView";
 import { getCurrentUser, subscribeToDatabase } from "./services/storage";
 import { ShieldAlert } from "lucide-react";
@@ -27,9 +30,11 @@ export default function App() {
     if (typeof window !== "undefined" && window.location.pathname && window.location.pathname !== "/") {
       return window.location.pathname;
     }
-    return "/dashboard";
+    return getCurrentUser().role === "admin" ? "/admin" : "/dashboard";
   });
   const [currentUser, setCurrentUser] = useState(getCurrentUser());
+  const [mapLayout, setMapLayout] = useState(() => currentRoute === '/knowledge-map');
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     const unsub = subscribeToDatabase(() => {
@@ -75,7 +80,7 @@ export default function App() {
             <ShieldAlert className="w-12 h-12 text-rose-400 mx-auto" />
             <h2 className="text-xl font-bold text-slate-100">Отказ в доступе (403 Forbidden)</h2>
             <p className="text-xs text-rose-200 leading-relaxed">
-              Раздел предназначен исключительно для Главного ментора. Переключите профиль в правом верхнем углу для тестирования прав администратора.
+              Раздел предназначен исключительно для Главного ментора. Войдите с учётными данными ментора.
             </p>
             <button
               onClick={() => navigate("/dashboard")}
@@ -87,6 +92,7 @@ export default function App() {
         );
       }
 
+      if (currentRoute === "/admin/users") return <AdminUsersView />;
       if (currentRoute === "/admin/reports") {
         return <AdminReportsView />;
       }
@@ -104,39 +110,43 @@ export default function App() {
 
     // 4. Standard Student routes
     switch (currentRoute) {
+      case "/profile":
+        return <ProfileView />;
       case "/course":
         return <CourseCatalogView navigate={navigate} />;
       case "/knowledge-map":
         return <KnowledgeMapView navigate={navigate} />;
       case "/progress":
-        return <ProgressView />;
+        return currentUser.role === 'admin' ? <AdminOverviewView navigate={navigate} /> : <ProgressView />;
       case "/exam-preparation":
-        return <ExamPrepView navigate={navigate} />;
+        return currentUser.role === 'admin' ? <AdminOverviewView navigate={navigate} /> : <ExamPrepView navigate={navigate} />;
       case "/assessments":
-        return <AssessmentsView navigate={navigate} />;
+        return currentUser.role === 'admin' ? <AdminOverviewView navigate={navigate} /> : <AssessmentsView navigate={navigate} />;
       case "/homework":
         return <HomeworkView />;
       case "/dashboard":
       default:
-        return <DashboardView navigate={navigate} />;
+        return currentUser.role === 'admin' ? <AdminOverviewView navigate={navigate} /> : <DashboardView navigate={navigate} />;
     }
   };
 
+  const isMap = currentRoute === '/knowledge-map';
   return (
-    <div className="min-h-screen bg-[#090F1C] text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950">
-      {/* Sticky Top Navigation */}
+    <div className={`app-shell ${mapLayout ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'} bg-[#110d1b] text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950`}>
       <Navbar currentRoute={currentRoute} navigate={navigate} />
-
-      {/* Main Content Area */}
-      <main className="flex-1 pb-16">{renderContent()}</main>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-[#090F1C] py-6 text-center text-xs text-slate-500 font-mono">
-        <p>NEXUS Academy — Образовательная платформа по кибербезопасности и телекоммуникациям</p>
-        <p className="mt-1 text-[11px] text-slate-600">
-          Индивидуальная образовательная траектория • Детерминированная сборка промптов • Интерактивный граф знаний
-        </p>
-      </footer>
+      <AnimatePresence mode="wait" initial={false} onExitComplete={() => setMapLayout(isMap)}>
+        <motion.main key={currentRoute} className={isMap ? 'min-h-0 flex-1 overflow-hidden' : 'flex-1 pb-16'}
+          initial={reducedMotion ? false : {opacity:0, y:8}}
+          animate={{opacity:1, y:0}}
+          exit={reducedMotion ? {opacity:1} : {opacity:0, y:-5}}
+          transition={{duration: reducedMotion ? 0 : .18, ease:'easeOut'}}>
+          {isMap ? <KnowledgeMapView navigate={navigate} /> : renderContent()}
+        </motion.main>
+      </AnimatePresence>
+      {!mapLayout && <footer className="border-t border-slate-800/80 bg-[#110d1b] py-6 text-center text-xs text-slate-500 font-mono">
+        <p>Rozephyr Learning — Образовательная платформа по кибербезопасности и телекоммуникациям</p>
+        <p className="mt-1 text-[11px] text-slate-600">Индивидуальная образовательная траектория • Детерминированная сборка промптов • Интерактивный граф знаний</p>
+      </footer>}
     </div>
   );
 }

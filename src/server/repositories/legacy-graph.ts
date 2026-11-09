@@ -1,0 +1,32 @@
+import type {PoolClient} from 'pg';
+
+/** Stages map data after curriculum in a separate database; metadata migration is separate. */
+export async function importLegacyGraph(db:PoolClient,source:any,courseId:string,ownTransaction=true):Promise<Record<string,number>>{
+ const keys=['graphNodes','graphEdges','relations','moduleRelations'];for(const key of keys)if(!Array.isArray(source?.[key]))throw new Error(`Отсутствует коллекция ${key}.`);
+ const allowed:Record<string,string[]>={graphNodes:['id','code','title','description','level','moduleId','topicId','x','y','prerequisites','futureApplications','status'],graphEdges:['id','from','to','type','label'],relations:['id','fromId','toId','type','description'],moduleRelations:['id','source','target','relation','displayTier','label','knowledgeTransfers','evidenceStatus','evidenceNote','approvalStatus','isAccessGate','directionality']};
+ for(const key of keys)for(const item of source[key]){if(!item||typeof item!=='object'||Array.isArray(item))throw new Error(`Некорректная запись ${key}.`);for(const field of Object.keys(item))if(!allowed[key].includes(field))throw new Error(`Неизвестное поле ${key}.${field}.`);}
+ if(ownTransaction)await db.query('BEGIN');try{
+  const exists=await db.query('SELECT 1 FROM course_graph_nodes WHERE course_id=$1 LIMIT 1',[courseId]);if(exists.rowCount)throw new Error('В целевом курсе уже есть граф.');
+  for(const n of source.graphNodes){await db.query(`INSERT INTO course_graph_nodes(course_id,id,code,title,description,level,module_id,topic_id,position_x,position_y,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,[courseId,n.id,n.code||null,n.title,n.description||'',n.level,n.moduleId||null,n.topicId||null,n.x??null,n.y??null,n.status||'draft']);
+   for(const [type,items] of [['prerequisite',n.prerequisites||[]],['future_application',n.futureApplications||[]]] as const)for(const [position,value] of (items as string[]).entries())await db.query('INSERT INTO course_graph_node_details(course_id,node_id,detail_type,position,value) VALUES($1,$2,$3,$4,$5)',[courseId,n.id,type,position,value]);}
+  for(const e of source.graphEdges)await db.query('INSERT INTO course_graph_edges(course_id,id,source_node_id,target_node_id,edge_type,label) VALUES($1,$2,$3,$4,$5,$6)',[courseId,e.id,e.from,e.to,e.type,e.label||'']);
+  for(const r of source.relations)await db.query('INSERT INTO course_knowledge_relations(course_id,id,source_node_id,target_node_id,relation_type,description) VALUES($1,$2,$3,$4,$5,$6)',[courseId,r.id,r.fromId,r.toId,r.type,r.description||'']);
+  for(const r of source.moduleRelations){await db.query(`INSERT INTO course_relations(course_id,id,source_module_id,target_module_id,relation_type,description,approval_status,display_tier,label,evidence_status,evidence_note,is_access_gate,directionality) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,[courseId,r.id,r.source,r.target,r.relation,'',r.approvalStatus,r.displayTier||null,r.label||null,r.evidenceStatus||null,r.evidenceNote||null,!!r.isAccessGate,r.directionality||null]);
+   for(const [i,t] of (r.knowledgeTransfers||[]).entries()){for(const field of Object.keys(t))if(!['sourceKnowledge','targetApplication'].includes(field))throw new Error(`Неизвестное поле переноса знания ${field}.`);await db.query('INSERT INTO relation_knowledge_transfers(course_id,relation_id,position,concept,explanation) VALUES($1,$2,$3,$4,$5)',[courseId,r.id,i,t.sourceKnowledge,t.targetApplication||'']);}}
+  const document=source.moduleGraphDocument;
+  if(document){
+   const checkFields=(o:any,fields:string[],where:string)=>{if(!o||typeof o!=='object'||Array.isArray(o))throw new Error(`Некорректный объект ${where}.`);for(const field of Object.keys(o))if(!fields.includes(field))throw new Error(`Неизвестное поле ${where}.${field}.`)};
+   checkFields(document,['schemaVersion','graphId','title','locale','dataStatus','sourceDocuments','semantics','graphUiRules','counts','nodes'],'moduleGraphDocument');
+   const rules=document.graphUiRules,counts=document.counts;
+   checkFields(rules,['defaultVisibleTier','showOnNodeSelection','showAllMode','filterableRelations','layout','edges','accessPolicy','colors'],'graphUiRules');
+   checkFields(counts,['nodes','edges','byRelation','byTier','mentionedInDraftPassports','expertProposedExtensions'],'counts');
+   await db.query(`INSERT INTO course_graph_documents(course_id,graph_id,schema_version,title,locale,data_status,show_on_node_selection,show_all_mode,layout,edges,access_policy,colors,declared_nodes,declared_edges,mentioned_in_draft_passports,expert_proposed_extensions) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,[courseId,document.graphId,document.schemaVersion,document.title,document.locale,document.dataStatus,rules.showOnNodeSelection??null,rules.showAllMode??null,rules.layout??null,rules.edges??null,rules.accessPolicy??null,rules.colors??null,counts.nodes??null,counts.edges??null,counts.mentionedInDraftPassports??null,counts.expertProposedExtensions??null]);
+   for(const [i,item] of document.sourceDocuments.entries()){checkFields(item,['name','role'],'sourceDocument');await db.query('INSERT INTO course_graph_sources VALUES($1,$2,$3,$4)',[courseId,i,item.name,item.role]);}
+   for(const [key,value] of Object.entries(document.semantics))await db.query('INSERT INTO course_graph_semantics VALUES($1,$2,$3)',[courseId,key,value]);
+   for(const [kind,items] of [['default_visible_tier',rules.defaultVisibleTier],['filterable_relation',rules.filterableRelations]] as const)for(const [i,value] of (items as string[]).entries())await db.query('INSERT INTO course_graph_rules VALUES($1,$2,$3,$4)',[courseId,kind,i,value]);
+   for(const [kind,items] of [['relation',counts.byRelation],['tier',counts.byTier]] as const)for(const [key,value] of Object.entries(items))await db.query('INSERT INTO course_graph_declared_counts VALUES($1,$2,$3,$4)',[courseId,kind,key,value]);
+   for(const n of document.nodes){checkFields(n,['id','code','title','order','contentApproval','publicationStatus'],'graphDocumentNode');await db.query('INSERT INTO course_graph_document_modules VALUES($1,$2,$3,$4,$5,$6,$7)',[courseId,n.id,n.code,n.title,n.order,n.contentApproval,n.publicationStatus]);}
+  }
+  if(ownTransaction)await db.query('COMMIT');return {...Object.fromEntries(keys.map(key=>[key,source[key].length])),document:document?1:0};
+ }catch(error){if(ownTransaction)await db.query('ROLLBACK');throw error}
+}
