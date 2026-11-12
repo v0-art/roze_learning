@@ -17,8 +17,12 @@
 *.temp
 *.swp
 *.swo
+*.orig
+*.rej
+*.pid
 *.bak
 *~
+/verify_*.png
 
 # Local secrets
 .env

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rozephyr.learning/contracts/1.0/content-manifest.schema.json",
+  "title": "Rozephyr Content ZIP manifest 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "formatVersion",
+    "packageId",
+    "scope",
+    "createdAt",
+    "source",
+    "entries"
+  ],
+  "properties": {
+    "format": {
+      "const": "rozephyr-content"
+    },
+    "formatVersion": {
+      "const": "1.0"
+    },
+    "packageId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+    },
+    "scope": {
+      "enum": [
+        "course",
+        "module",
+        "topic",
+        "item",
+        "assessment_bank",
+        "mixed"
+      ]
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "path"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+          },
+          "kind": {
+            "enum": [
+              "course",
+              "module",
+              "topic",
+              "lesson",
+              "remedial",
+              "control_work",
+              "exam",
+              "assessment_bank",
+              "skill",
+              "relation",
+              "regulation",
+              "curriculum_plan"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9_./-]+$"
+          }
+        }
+      }
+    }
+  }
+}

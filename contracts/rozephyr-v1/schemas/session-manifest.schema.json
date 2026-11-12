@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rozephyr.learning/contracts/1.0/session-manifest.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "formatVersion",
+    "sessionId",
+    "studentRef",
+    "courseId",
+    "itemId",
+    "itemType",
+    "itemRevision",
+    "regulationRevision",
+    "createdAt",
+    "files"
+  ],
+  "properties": {
+    "format": {
+      "const": "rozephyr-session"
+    },
+    "formatVersion": {
+      "const": "1.0"
+    },
+    "sessionId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+    },
+    "studentRef": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+    },
+    "courseId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+    },
+    "itemId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+    },
+    "itemType": {
+      "enum": [
+        "lesson",
+        "control_work",
+        "exam",
+        "remedial"
+      ]
+    },
+    "itemRevision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "regulationRevision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "files": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "string",
+        "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9_./-]+$"
+      },
+      "uniqueItems": true
+    }
+  }
+}

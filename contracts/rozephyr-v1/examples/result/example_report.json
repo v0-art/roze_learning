@@ -1,0 +1,47 @@
+{
+  "format": "rozephyr-result",
+  "formatVersion": "1.0",
+  "sessionId": "DEMO-SESSION-001",
+  "itemId": "M01-T01-U01",
+  "itemType": "lesson",
+  "status": "completed",
+  "submittedAt": "2026-11-10T00:00:00Z",
+  "source": "external_ai_user_submitted",
+  "entryControl": {
+    "homeworkResults": [],
+    "recheckResults": []
+  },
+  "result": {
+    "earnedScore": 1,
+    "maxScore": 2,
+    "questions": [
+      {
+        "questionId": "Q01",
+        "result": "partial",
+        "pointsAwarded": 1,
+        "maxPoints": 2,
+        "feedback": "Тестовый пример."
+      }
+    ]
+  },
+  "knowledgeGaps": [
+    {
+      "gapId": "M01-T01-U01:Q01",
+      "description": "Тестовый пробел",
+      "status": "open"
+    }
+  ],
+  "strongSkills": [],
+  "nextContext": {
+    "mandatoryRechecks": [
+      "M01-T01-U01:Q01"
+    ],
+    "homework": [
+      {
+        "homeworkId": "M01-T01-U01-HW01",
+        "title": "Демо ДЗ",
+        "description": "Тестовый пример задания."
+      }
+    ]
+  }
+}

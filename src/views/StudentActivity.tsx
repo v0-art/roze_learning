@@ -1,0 +1,18 @@
+import React,{useEffect,useState} from 'react';
+import {part,relationalRequest} from '../services/relational';
+
+type Day={day:string;logins:number;lessons:number};
+type Activity={timeZone:string;days:Day[]};
+function dateLabel(value:string,options:Intl.DateTimeFormatOptions){return new Date(`${value}T12:00:00`).toLocaleDateString('ru-RU',options)}
+
+export function StudentActivity({courseId,userId}:{courseId:string;userId:string}){
+ const [data,setData]=useState<Activity|null>(null),[index,setIndex]=useState(29),[error,setError]=useState('');
+ useEffect(()=>{let active=true;setData(null);setError('');setIndex(29);if(!courseId)return;const timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
+  void relationalRequest<Activity>(`/courses/${part(courseId)}/students/${part(userId)}/activity?timeZone=${encodeURIComponent(timeZone)}`).then(value=>{if(active)setData(value)}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Не удалось загрузить активность.')});return()=>{active=false};
+ },[courseId,userId]);
+ const days=data?.days||[],selected=days[index],maximum=Math.max(1,...days.flatMap(item=>[item.logins,item.lessons]));
+ return <section className="rounded-2xl border border-violet-300/20 bg-[#1b1429] p-5" aria-labelledby="student-activity-title"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 id="student-activity-title" className="text-lg font-semibold">Активность за 30 дней</h3><p className="mt-1 text-sm text-slate-400">Успешные входы в аккаунт и занятия с сохранённым отчётом в этом курсе.</p></div><div className="flex gap-4 text-xs"><span className="text-violet-200">● Входы</span><span className="text-sky-200">● Занятия</span></div></div>
+ {error?<p role="alert" className="mt-4 text-sm text-rose-300">{error}</p>:!data?<p className="mt-4 text-sm text-slate-400">Загружаем активность…</p>:<><div className="mt-5 flex min-h-12 flex-wrap items-baseline gap-x-5 gap-y-1 rounded-xl bg-[#120d1c] px-4 py-3 text-sm" aria-live="polite"><strong className="text-violet-100">{selected?dateLabel(selected.day,{day:'numeric',month:'long',year:'numeric'}):'Выберите день'}</strong>{selected&&<><span className="text-violet-200">Входы: {selected.logins}</span><span className="text-sky-200">Завершено занятий: {selected.lessons}</span></>}</div>
+ <div className="mt-5 overflow-x-auto"><div className="flex min-w-[36rem] items-end gap-1 border-b border-violet-300/20" role="group" aria-label="Активность по дням">{days.map((day,i)=><button type="button" key={day.day} onMouseEnter={()=>setIndex(i)} onFocus={()=>setIndex(i)} onClick={()=>setIndex(i)} aria-label={`${dateLabel(day.day,{day:'numeric',month:'long',year:'numeric'})}: входов ${day.logins}, завершённых занятий ${day.lessons}`} aria-pressed={index===i} className={`group flex h-36 min-w-0 flex-1 items-end justify-center gap-0.5 rounded-t px-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-200 ${index===i?'bg-violet-300/10':''}`}><span className="w-2 rounded-t bg-violet-300/80 group-hover:bg-violet-200" style={{height:`${Math.max(2,day.logins/maximum*100)}%`}}/><span className="w-2 rounded-t bg-sky-300/80 group-hover:bg-sky-200" style={{height:`${Math.max(2,day.lessons/maximum*100)}%`}}/></button>)}</div><div className="mt-2 flex min-w-[36rem] justify-between text-xs text-slate-400"><span>{dateLabel(days[0].day,{day:'numeric',month:'short'})}</span><span>{dateLabel(days.at(-1)!.day,{day:'numeric',month:'short'})}</span></div></div><p className="mt-3 text-xs text-slate-400">Выберите столбец, чтобы увидеть показатели дня. Время: {data.timeZone}.</p></>}
+ </section>;
+}

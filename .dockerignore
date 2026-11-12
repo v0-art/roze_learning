@@ -11,6 +11,8 @@
 !scripts/**
 !db/
 !db/**
+!contracts/
+!contracts/**
 !public/
 !public/**
 !data/

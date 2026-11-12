@@ -1,0 +1,52 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import {parse} from 'dotenv';
+import pg from 'pg';
+import JSZip from 'jszip';
+import {applyRelationalMigrations} from '../src/server/relational-migrations';
+import {createCourse} from '../src/server/repositories/courses';
+import {importV3Content,exportV3Content} from '../src/server/repositories/v3-content';
+import {readV3Content} from '../src/server/v3-contracts';
+
+test('AT-25: ticket topic references survive import/export and affect revisions',{timeout:120000},async()=>{
+ const c=parse(fs.readFileSync('.env.postgres'));
+ const prefix=`postgresql://${encodeURIComponent(c.POSTGRES_USER)}:${encodeURIComponent(c.POSTGRES_PASSWORD)}@127.0.0.1:${process.env.NEXUS_TEST_POSTGRES_PORT||'55432'}/`;
+ const admin=new pg.Client({connectionString:prefix+encodeURIComponent(c.POSTGRES_DB)});await admin.connect();
+ const name='nexus_ticket_'+crypto.randomBytes(5).toString('hex');await admin.query(`CREATE DATABASE "${name}"`);
+ const pool=new pg.Pool({connectionString:prefix+name}),db=await pool.connect();
+ try{
+  await applyRelationalMigrations(db);
+  await db.query("INSERT INTO platform_accounts(id,username,display_name) VALUES('m','mentor','Mentor')");
+  await db.query("INSERT INTO platform_account_roles(account_id,role) VALUES('m','mentor')");
+  await createCourse(db,'m','course1','Тест 1');await createCourse(db,'m','course2','Тест 2');
+  const raw=fs.readFileSync('tests/fixtures/v3-m01-full/M01_FULL_52_LESSONS_2_CONTROLS_EXAM_TEST.zip');
+  const readBank=async(buffer:Buffer)=>{const parsed=await readV3Content(buffer);return parsed.entries.find(e=>e.id==='M01-EX01-BANK')!.value};
+  const topics=(bank:any)=>Object.fromEntries(bank.content.tickets.map((t:any)=>[t.ticketId,t.topicId??null]));
+  const original=await readBank(raw);assert.equal(original.content.tickets.length,52);
+  const expected=topics(original);assert.equal(Object.values(expected).filter(Boolean).length,52);
+  await importV3Content(db,'m','course1',raw.toString('base64'));
+  const stored=await db.query("SELECT content FROM v3_content_revisions WHERE course_id='course1' AND entity_id='M01-EX01-BANK' AND revision=1");
+  assert.deepEqual(topics(stored.rows[0].content),expected);
+  const first=await exportV3Content(db,'m','course1');assert.deepEqual(topics(await readBank(first)),expected);
+  await importV3Content(db,'m','course2',first.toString('base64'));
+  const second=await exportV3Content(db,'m','course2');assert.deepEqual(topics(await readBank(second)),expected);
+  assert.ok((await importV3Content(db,'m','course2',first.toString('base64'))).changes.every(c=>c.action==='unchanged'));
+  const zip=await JSZip.loadAsync(first),manifest=JSON.parse(await zip.file('manifest.json')!.async('string'));
+  const path=manifest.entries.find((entry:any)=>entry.id==='M01-EX01-BANK').path;
+  const entry=zip.file(path);assert.ok(entry,`Отсутствует ${path}`);
+  const bank=JSON.parse(await entry.async('string'));
+  delete bank.content.tickets[0].topicId;
+  bank.content.tickets[1].topicId=bank.content.tickets[1].topicId==='M01-T01'?'M01-T02':'M01-T01';
+  zip.file(path,JSON.stringify(bank));const changed=await zip.generateAsync({type:'nodebuffer'});
+  await readV3Content(changed);
+  const changes=await importV3Content(db,'m','course2',changed.toString('base64'));
+  assert.equal(changes.changes.find(c=>c.id==='M01-EX01-BANK')?.action,'update');
+  const rows=await db.query("SELECT revision,content FROM v3_content_revisions WHERE course_id='course2' AND entity_id='M01-EX01-BANK' ORDER BY revision");
+  assert.equal(rows.rowCount,2);assert.deepEqual(topics(rows.rows[0].content),expected);
+  assert.equal(Object.hasOwn(rows.rows[1].content.content.tickets[0],'topicId'),false);
+  assert.equal(rows.rows[1].content.content.tickets[1].topicId,bank.content.tickets[1].topicId);
+  assert.ok((await importV3Content(db,'m','course2',changed.toString('base64'))).changes.every(c=>c.action==='unchanged'));
+ }finally{db.release();await pool.end();await admin.query(`DROP DATABASE "${name}"`);await admin.end()}
+});

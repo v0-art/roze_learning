@@ -1,0 +1,492 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rozephyr.learning/contracts/1.0/report.schema.json",
+  "title": "Rozephyr Session Report 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "formatVersion",
+    "sessionId",
+    "itemId",
+    "itemType",
+    "status",
+    "submittedAt",
+    "source",
+    "entryControl",
+    "result",
+    "knowledgeGaps",
+    "strongSkills",
+    "nextContext"
+  ],
+  "properties": {
+    "format": {
+      "const": "rozephyr-result"
+    },
+    "formatVersion": {
+      "const": "1.0"
+    },
+    "sessionId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+    },
+    "itemId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+    },
+    "itemType": {
+      "enum": [
+        "lesson",
+        "control_work",
+        "exam",
+        "remedial"
+      ]
+    },
+    "status": {
+      "enum": [
+        "completed",
+        "failed",
+        "incomplete"
+      ]
+    },
+    "submittedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "const": "external_ai_user_submitted"
+    },
+    "entryControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "homeworkResults",
+        "recheckResults"
+      ],
+      "properties": {
+        "homeworkResults": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "homeworkId",
+              "sourceItemId",
+              "status",
+              "feedback"
+            ],
+            "properties": {
+              "homeworkId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+              },
+              "sourceItemId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+              },
+              "status": {
+                "enum": [
+                  "checked",
+                  "needs_revision",
+                  "not_submitted"
+                ]
+              },
+              "feedback": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "recheckResults": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sourceItemId",
+              "sourceQuestionId",
+              "status",
+              "evidence"
+            ],
+            "properties": {
+              "sourceItemId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+              },
+              "sourceQuestionId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+              },
+              "status": {
+                "enum": [
+                  "persists",
+                  "resolved"
+                ]
+              },
+              "evidence": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "result": {
+      "type": "object"
+    },
+    "knowledgeGaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "gapId",
+          "description",
+          "status"
+        ],
+        "properties": {
+          "gapId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "open",
+              "resolved"
+            ]
+          }
+        }
+      }
+    },
+    "strongSkills": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+      }
+    },
+    "nextContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mandatoryRechecks",
+        "homework"
+      ],
+      "properties": {
+        "mandatoryRechecks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+          }
+        },
+        "homework": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "homeworkId",
+              "title",
+              "description"
+            ],
+            "properties": {
+              "homeworkId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "itemType": {
+            "enum": [
+              "lesson",
+              "remedial"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "earnedScore",
+              "maxScore",
+              "questions"
+            ],
+            "properties": {
+              "earnedScore": {
+                "type": "number",
+                "minimum": 0
+              },
+              "maxScore": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "questions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "questionId",
+                    "result",
+                    "pointsAwarded",
+                    "maxPoints"
+                  ],
+                  "properties": {
+                    "questionId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+                    },
+                    "result": {
+                      "enum": [
+                        "correct",
+                        "partial",
+                        "incorrect"
+                      ]
+                    },
+                    "pointsAwarded": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "maxPoints": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "feedback": {
+                      "type": "string"
+                    },
+                    "questionText": {
+                      "type": "string",
+                      "description": "Исходная формулировка вопроса, если она доступна."
+                    },
+                    "studentAnswer": {
+                      "type": "string",
+                      "description": "Исходный ответ ученика, если он доступен."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "itemType": {
+            "const": "control_work"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "earnedScore",
+              "maxScore",
+              "percent",
+              "grade",
+              "questions"
+            ],
+            "properties": {
+              "earnedScore": {
+                "type": "number",
+                "minimum": 0
+              },
+              "maxScore": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "percent": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "grade": {
+                "enum": [
+                  "failed",
+                  "passed",
+                  "good",
+                  "excellent"
+                ]
+              },
+              "questions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "questionId",
+                    "result",
+                    "pointsAwarded",
+                    "maxPoints"
+                  ],
+                  "properties": {
+                    "questionId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+                    },
+                    "result": {
+                      "enum": [
+                        "correct",
+                        "partial",
+                        "incorrect"
+                      ]
+                    },
+                    "pointsAwarded": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "maxPoints": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "feedback": {
+                      "type": "string"
+                    },
+                    "questionText": {
+                      "type": "string",
+                      "description": "Исходная формулировка вопроса, если она доступна."
+                    },
+                    "studentAnswer": {
+                      "type": "string",
+                      "description": "Исходный ответ ученика, если он доступен."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "itemType": {
+            "const": "exam"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "earnedScore",
+              "maxScore",
+              "percent",
+              "grade",
+              "ticketId",
+              "bankVersion",
+              "questions"
+            ],
+            "properties": {
+              "earnedScore": {
+                "type": "number",
+                "minimum": 0
+              },
+              "maxScore": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "percent": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "grade": {
+                "enum": [
+                  "failed",
+                  "passed",
+                  "good",
+                  "excellent"
+                ]
+              },
+              "ticketId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+              },
+              "bankVersion": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "questions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "questionId",
+                    "result",
+                    "pointsAwarded",
+                    "maxPoints"
+                  ],
+                  "properties": {
+                    "questionId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+                    },
+                    "result": {
+                      "enum": [
+                        "correct",
+                        "partial",
+                        "incorrect"
+                      ]
+                    },
+                    "pointsAwarded": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "maxPoints": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "feedback": {
+                      "type": "string"
+                    },
+                    "questionText": {
+                      "type": "string",
+                      "description": "Исходная формулировка вопроса, если она доступна."
+                    },
+                    "studentAnswer": {
+                      "type": "string",
+                      "description": "Исходный ответ ученика, если он доступен."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -80,11 +80,18 @@ export async function requireStudentAccess(db:PoolClient, actorId:string, course
 }
 export async function listStudentAttempts(db:PoolClient, actorId:string, courseId:string, studentId:string){
   await requireStudentAccess(db,actorId,courseId,studentId);
-  const result=await db.query('SELECT id,lesson_id,status,score,max_score,submitted_at FROM lesson_attempts WHERE course_id=$1 AND student_id=$2 ORDER BY submitted_at DESC',[courseId,studentId]);return result.rows;
+  const result=await db.query(`SELECT a.id,a.lesson_id,a.status,a.score,a.max_score,a.submitted_at,a.mentor_confirmed,
+    l.title AS lesson_title,t.id AS topic_id,t.title AS topic_title,m.id AS module_id,m.title AS module_title
+    FROM lesson_attempts a JOIN course_lessons l ON l.course_id=a.course_id AND l.id=a.lesson_id
+    JOIN course_topics t ON t.course_id=l.course_id AND t.id=l.topic_id
+    JOIN course_modules m ON m.course_id=t.course_id AND m.id=t.module_id
+    WHERE a.course_id=$1 AND a.student_id=$2 ORDER BY a.submitted_at DESC NULLS LAST,a.id DESC`,[courseId,studentId]);return result.rows;
 }
 export async function readStudentAttempt(db:PoolClient,actorId:string,courseId:string,studentId:string,attemptId:string){
  await requireStudentAccess(db,actorId,courseId,studentId);
- const attempt=await db.query(`SELECT id,lesson_id,status,score,max_score,reported_earned_score,reported_max_score,mentor_confirmed,mentor_feedback,submitted_at,original_report_bytes FROM lesson_attempts WHERE course_id=$1 AND student_id=$2 AND id=$3`,[courseId,studentId,attemptId]);
+ const attempt=await db.query(`SELECT a.id,a.lesson_id,a.status,a.score,a.max_score,a.reported_earned_score,a.reported_max_score,a.mentor_confirmed,a.mentor_feedback,a.submitted_at,a.original_report_bytes,l.title AS lesson_title,t.id AS topic_id,t.title AS topic_title,m.id AS module_id,m.title AS module_title
+  FROM lesson_attempts a JOIN course_lessons l ON l.course_id=a.course_id AND l.id=a.lesson_id JOIN course_topics t ON t.course_id=l.course_id AND t.id=l.topic_id JOIN course_modules m ON m.course_id=t.course_id AND m.id=t.module_id
+  WHERE a.course_id=$1 AND a.student_id=$2 AND a.id=$3`,[courseId,studentId,attemptId]);
  if(!attempt.rowCount)return null;
  const questions=await db.query(`SELECT question_id,result,feedback,student_answer,earned_points,max_points,needs_recheck FROM lesson_question_results WHERE attempt_id=$1 ORDER BY question_id`,[attemptId]);
  const data=attempt.rows[0];return {...data,original_report:data.original_report_bytes?.toString('utf8')??null,original_report_bytes:undefined,questions:questions.rows};

@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rozephyr.learning/contracts/1.0/session-context.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sessionId",
+    "openHomework",
+    "mandatoryRechecks",
+    "relevantSkills",
+    "priorSummary"
+  ],
+  "properties": {
+    "sessionId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+    },
+    "openHomework": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "homeworkId",
+          "sourceItemId",
+          "description",
+          "status"
+        ],
+        "properties": {
+          "homeworkId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+          },
+          "sourceItemId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "assigned",
+              "pending",
+              "needs_revision",
+              "not_submitted"
+            ]
+          }
+        }
+      }
+    },
+    "mandatoryRechecks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sourceItemId",
+          "questionId",
+          "prompt"
+        ],
+        "properties": {
+          "sourceItemId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+          },
+          "questionId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "relevantSkills": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+      }
+    },
+    "priorSummary": {
+      "type": "string"
+    }
+  }
+}

@@ -17,6 +17,7 @@ COPY --from=build --chown=node:node /app/src ./src
 COPY --chown=node:node server.ts ./server.ts
 COPY --chown=node:node scripts ./scripts
 COPY --chown=node:node db ./db
+COPY --chown=node:node contracts ./contracts
 COPY --chown=node:node data/nexus_seed.json data/module_graph_v1.json ./data/
 USER node
 EXPOSE 3000

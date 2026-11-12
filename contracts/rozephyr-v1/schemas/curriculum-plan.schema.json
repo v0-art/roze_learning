@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rozephyr.learning/contracts/1.0/curriculum-plan.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "formatVersion",
+    "courseId",
+    "moduleId",
+    "items"
+  ],
+  "properties": {
+    "format": {
+      "const": "rozephyr-curriculum-plan"
+    },
+    "formatVersion": {
+      "const": "1.0"
+    },
+    "courseId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+    },
+    "moduleId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "position",
+          "required",
+          "blocksNext",
+          "topicIds"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+          },
+          "kind": {
+            "enum": [
+              "lesson",
+              "control_work",
+              "exam",
+              "remedial"
+            ]
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "blocksNext": {
+            "type": "boolean"
+          },
+          "topicIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$"
+            },
+            "uniqueItems": true
+          }
+        }
+      }
+    }
+  }
+}

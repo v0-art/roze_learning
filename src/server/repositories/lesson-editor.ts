@@ -22,3 +22,12 @@ export async function publishLesson(db:PoolClient,actor:string,courseId:string,i
   await db.query("UPDATE course_lessons SET status='published',current_lesson_version_id=$3 WHERE course_id=$1 AND id=$2",[courseId,id,expectedVersionId]);await db.query("INSERT INTO course_audit_events(course_id,actor_id,action,target_type,target_id,reason) VALUES($1,$2,'PUBLISH_LESSON','LESSON',$3,$4)",[courseId,actor,id,expectedVersionId]);await db.query('COMMIT');return {id,status:'published'};
  }catch(error){await db.query('ROLLBACK');throw error}
 }
+/** Remove public access while preserving the lesson version and historical snapshots. */
+export async function unpublishLesson(db:PoolClient,actor:string,courseId:string,id:string,expectedVersionId:unknown){
+ if(typeof expectedVersionId!=='string'||!expectedVersionId)throw invalid();await db.query('BEGIN');try{
+  await requireMentor(db,actor,courseId,'can_manage_content');const found=await db.query("SELECT status,COALESCE(current_lesson_version_id,'current') AS version_id FROM course_lessons WHERE course_id=$1 AND id=$2 FOR UPDATE",[courseId,id]);
+  if(!found.rowCount)throw missing();if(found.rows[0].version_id!==expectedVersionId||found.rows[0].status!=='published')throw Object.assign(new Error('Урок уже изменён.'),{code:'CONFLICT'});
+  await db.query("UPDATE course_lessons SET status='draft' WHERE course_id=$1 AND id=$2",[courseId,id]);
+  await db.query("INSERT INTO course_audit_events(course_id,actor_id,action,target_type,target_id,reason) VALUES($1,$2,'UNPUBLISH_LESSON','LESSON',$3,$4)",[courseId,actor,id,expectedVersionId]);await db.query('COMMIT');return {id,status:'draft'};
+ }catch(error){await db.query('ROLLBACK');throw error}
+}

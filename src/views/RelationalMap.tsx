@@ -1,9 +1,9 @@
 import React,{useEffect,useState} from 'react';import {KnowledgeGraph} from '../components/KnowledgeGraph';import type {ModuleItem,TopicItem,RelationItem,SkillItem} from '../types';import type {ModuleRelation} from '../core/moduleGraph';import {part,relationalRequest} from '../services/relational';
 
-type Data={modules:ModuleItem[];topics:TopicItem[];relations:RelationItem[];skills:SkillItem[];edges:ModuleRelation[]};
+type Data={modules:ModuleItem[];topics:TopicItem[];relations:RelationItem[];skills:SkillItem[];edges:ModuleRelation[];unsupportedRelations?:number};
 export function RelationalMap({courseId,onExit}:{courseId:string;onExit:()=>void}){
  const [data,setData]=useState<Data|null>(null),[error,setError]=useState('');
- useEffect(()=>{let active=true;setData(null);setError('');const base=`/courses/${part(courseId)}`;void Promise.all([relationalRequest<any>(`${base}/curriculum`),relationalRequest<any>(`${base}/module-graph`)]).then(([plan,graph])=>{if(!active)return;
+ useEffect(()=>{let active=true;setData(null);setError('');const base=`/courses/${part(courseId)}`;void Promise.all([relationalRequest<any>(`${base}/curriculum`),relationalRequest<any>(`${base}/module-graph`),relationalRequest<any>(`${base}/graph-v3`)]).then(([plan,graph,v3])=>{if(!active)return;if(v3.enabled){setData(v3);return}
   const modules:ModuleItem[]=plan.modules.map((m:any)=>({id:m.id,code:m.id,order:m.position,title:m.title,shortDescription:m.short_description||'',introduction:m.introduction||'',topicsCount:plan.topics.filter((t:any)=>t.module_id===m.id).length,publishedLessonsCount:plan.lessons.filter((l:any)=>l.module_id===m.id&&l.status==='published').length,prerequisites:m.prerequisites||[],status:m.status,whyItMatters:m.why_it_matters,whatIsStudied:m.what_is_studied,futureApplications:m.applications||[]}));
   const topics:TopicItem[]=plan.topics.map((t:any)=>({id:t.id,code:t.id,moduleId:t.module_id,order:t.position,title:t.title,description:t.description||'',learningObjectives:t.objectives||[],skillsTaught:t.skills||[],status:t.status,controlWorkId:t.control_work_id||undefined}));
   const relations:RelationItem[]=plan.relations.map((r:any)=>({id:r.id,fromId:r.source_node_id,toId:r.target_node_id,type:r.relation_type,description:r.description}));
@@ -12,5 +12,5 @@ export function RelationalMap({courseId,onExit}:{courseId:string;onExit:()=>void
   setData({modules,topics,relations,skills,edges});
  }).catch(e=>{if(active)setError(e instanceof Error?e.message:'Не удалось загрузить карту знаний.')});return()=>{active=false}},[courseId]);
  if(error)return <p role="alert" className="p-5 text-rose-300">{error}</p>;if(!data)return <p className="p-5 text-violet-200">Загружаем карту знаний…</p>;
- return <div className="h-[calc(100vh-8rem)] min-h-[32rem] overflow-hidden rounded-2xl border border-violet-300/15"><KnowledgeGraph modules={data.modules} topics={data.topics} relations={data.relations} skills={data.skills} moduleGraphEdges={data.edges} mentor={false} onExit={onExit}/></div>;
+ return <div className="h-[calc(100vh-8rem)] min-h-[32rem] overflow-hidden rounded-2xl border border-violet-300/15">{!!data.unsupportedRelations&&<p role="status" className="bg-[#1b1429] px-4 py-2 text-sm text-violet-100">Часть опубликованных связей ({data.unsupportedRelations}) не отображается: в них не указаны распознаваемые источник, цель или тип.</p>}<KnowledgeGraph modules={data.modules} topics={data.topics} relations={data.relations} skills={data.skills} moduleGraphEdges={data.edges} mentor={false} onExit={onExit}/></div>;
 }

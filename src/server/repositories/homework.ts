@@ -6,7 +6,7 @@ export async function listStudentHomework(db:PoolClient,actor:string,courseId:st
  return (await db.query(`SELECT h.id,h.title,h.description,h.status,h.student_answer,h.ai_feedback,h.mentor_feedback,h.assigned_at,h.submitted_at,h.verified_at,a.lesson_id,t.module_id,l.topic_id
   FROM homework_assignments h JOIN lesson_attempts a ON a.id=h.attempt_id AND a.course_id=h.course_id AND a.student_id=h.student_id
   JOIN course_lessons l ON l.course_id=a.course_id AND l.id=a.lesson_id JOIN course_topics t ON t.course_id=l.course_id AND t.id=l.topic_id
-  WHERE h.course_id=$1 AND h.student_id=$2 ORDER BY t.module_id,l.topic_id,l.position,h.assigned_at,h.id`,[courseId,studentId])).rows;
+  WHERE h.course_id=$1 AND h.student_id=$2 ORDER BY h.assigned_at DESC NULLS LAST,a.submitted_at DESC NULLS LAST,h.id DESC`,[courseId,studentId])).rows;
 }
 export async function submitHomework(db:PoolClient,student:string,courseId:string,id:string,answer:unknown){
  if(typeof answer!=='string'||!answer.trim()||answer.length>20000)throw invalid();

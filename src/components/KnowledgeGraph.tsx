@@ -24,7 +24,7 @@ const CARD_HEIGHT = 72;
 const STEP_X = 250;
 const STEP_Y = 168;
 const MARGIN = 24;
-const NODE_COLORS = ['#c6a7f4', '#91b8ed', '#81cbd1', '#e5a9ca', '#d4b478', '#a8c993', '#e39b91', '#ad9ee5', '#78b6ca', '#d1a4d8', '#9dc9bc', '#e0ba92', '#adbee4', '#d59cb1', '#a3c5e5', '#c5bf89', '#96ceb0', '#d0a6b9'];
+const NODE_COLORS = ['#c6a7f4','#91b8ed','#9dbff5','#c2b1ed','#a8b9f3','#b7a4e9','#9fcef5','#b0a9f1','#8db4e9','#c5b8f6','#a9c5ef','#b6b1ea','#adbee4','#c1aaf0','#a3c5e5','#afa5dc','#a5c3ee','#beb3e9'];
 
 // Orthogonal segments with small rounded elbows, like parallel cables in a tray.
 function cablePath(points: {x: number; y: number}[]) {
