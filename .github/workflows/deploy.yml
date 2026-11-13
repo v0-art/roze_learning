@@ -19,6 +19,8 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
+      - name: Prepare isolated legacy test fixture
+        run: npm run data:init
       - run: npm test
       - run: node --import tsx --test tests/v3-contracts.test.ts tests/v3-sequence.test.ts tests/backup-script.test.ts
       - run: npm run build
