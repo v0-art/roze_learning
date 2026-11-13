@@ -1,4 +1,7 @@
 {$SITE_ADDRESS} {
     encode zstd gzip
-    reverse_proxy app:3000
+    reverse_proxy app:3000 {
+        # Do not trust client-supplied forwarding headers.
+        header_up X-Forwarded-For {remote_host}
+    }
 }

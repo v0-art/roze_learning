@@ -18,6 +18,7 @@ import 'dotenv/config';
 import {createPostgresStore} from './src/server/postgres-sync';
 import pg from 'pg';
 import {createRelationalApi} from './src/server/relational-api';
+import {configureCaddyProxy} from './src/server/proxy';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,6 +77,8 @@ function addMentorMessage(db: any, recipientId: string, subject: string, content
 async function startServer() {
   if (postgresStore) postgresStore.read(); // Fail closed before listening if PostgreSQL is unavailable.
   const app = express();
+  // Enabled only behind the configured Caddy proxy, which replaces client-supplied X-Forwarded-For.
+  configureCaddyProxy(app,process.env.NEXUS_TRUST_CADDY_PROXY==='true');
   app.get('/api/runtime',(_req,res)=>{res.setHeader('Cache-Control','no-store');res.json({storage:relationalOnly?'relational':'legacy'});});
 
   // Opt-in only while legacy routes are migrated. Separate cookie and path prevent

@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Rozephyr database backup
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 Europe/Moscow
+Persistent=true
+AccuracySec=1m
+Unit=rozephyr-backup.service
+
+[Install]
+WantedBy=timers.target

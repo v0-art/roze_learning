@@ -41,6 +41,7 @@ services:
       PGUSER: roze_app
       PGPASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in .env.vps}
       NEXUS_COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      NEXUS_TRUST_CADDY_PROXY: "true"
     depends_on:
       migrate:
         condition: service_completed_successfully
